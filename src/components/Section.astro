@@ -31,12 +31,28 @@ const SECTION_COMPONENTS: Record<string, any> = {
 	legal: Legal,
 };
 
+// icons is an optional, generic per-page mapping a consumer passes to opt a
+// page into the shared line-icon set (Icon.astro) without page.schema.json
+// growing an icon field -- the schema has no such field, and content
+// instances can't carry one, so the mapping lives in the .astro caller
+// (real venture vocabulary: block.label / sectionId -> a real ICONS key)
+// and flows through here to whichever sections/*.astro component knows how
+// to use it. Absent for a section kind that doesn't look at it -- a no-op,
+// not an error.
+export interface SectionIcons {
+	/** sectionId -> icon name, for a section-level heading icon. */
+	section?: Record<string, string>;
+	/** block.label -> icon name, for a per-block icon (e.g. Audiences cards). */
+	block?: Record<string, string>;
+}
+
 export interface Props {
 	section: any;
 	site?: any;
 	companyLabel?: string;
+	icons?: SectionIcons;
 }
-const { section, site, companyLabel } = Astro.props;
+const { section, site, companyLabel, icons } = Astro.props;
 const Component = SECTION_COMPONENTS[section.sectionKind];
 if (!Component) {
 	throw new Error(`Section.astro: unknown sectionKind "${section.sectionKind}" (id: ${section.sectionId})`);
@@ -45,7 +61,7 @@ if (!Component) {
 {section.sectionKind === 'cta' ? (
 	<Cta section={section} leadCapture={site?.leadCapture} companyLabel={companyLabel} />
 ) : (
-	<Component section={section} />
+	<Component section={section} icons={icons} />
 )}
 {
 	// crossLinks[] is schema-legal on any section kind (not sectionKind-

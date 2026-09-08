@@ -36,11 +36,18 @@ const ICONS: Record<string, string> = {
 };
 
 export interface Props {
-	name: keyof typeof ICONS;
+	/**
+	 * A real ICONS key. Typed as string (not keyof typeof ICONS) because
+	 * callers building a name from content data (block.label -> icon,
+	 * see Section.astro's SectionIcons) can't statically narrow to the
+	 * literal union -- an unknown name renders nothing rather than
+	 * failing the build.
+	 */
+	name: string;
 	class?: string;
 }
 const { name, class: className = 'w-6 h-6' } = Astro.props;
-const inner = ICONS[name] ?? '';
+const inner = ICONS[name as keyof typeof ICONS] ?? '';
 ---
 <svg
 	xmlns="http://www.w3.org/2000/svg"
