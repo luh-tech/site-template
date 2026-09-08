@@ -1,4 +1,4 @@
-# @luhtech/site-template
+# @luh-tech/site-template
 
 One Astro component library renders every LuhTech venture marketing site from
 its own `content/page.schema.json` + `content/site.schema.json` instances.
@@ -8,16 +8,16 @@ instance fails the build instead of shipping.
 
 ## The contract
 
-- **`loadSite(path)`** / **`loadPage(path)`** (`@luhtech/site-template/content`)
+- **`loadSite(path)`** / **`loadPage(path)`** (`@luh-tech/site-template/content`)
   read a JSON file and ajv-validate it against the live, version-pinned
   schema (`package.json`'s `luhtech.schemaPins`) plus its real `$ref` chain.
   Throws on any validation failure.
-- **`<SiteLayout site={site} page={page}>`** (`@luhtech/site-template/layouts/SiteLayout.astro`)
+- **`<SiteLayout site={site} page={page}>`** (`@luh-tech/site-template/layouts/SiteLayout.astro`)
   renders nav from `site.nav`, footer from `site.footer.legalLine` +
   `parentHref`, and `<head>` from `page.seo` (title, description, og:\*,
   twitter:\*). `og:image`'s "must not be a staging host" rule is enforced by
   the schema itself, not this layout.
-- **`<Section section={s} />`** (`@luhtech/site-template/components/Section.astro`)
+- **`<Section section={s} />`** (`@luh-tech/site-template/components/Section.astro`)
   dispatches on `sectionKind` to one component per kind: `Hero`, `Problem`,
   `Approach`, `Proof`, `Audiences`, `Open`, `Status`, `Sources`, `Cta`,
   `Legal` (all under `components/sections/`). `blocks[]` render by
@@ -25,6 +25,27 @@ instance fails the build instead of shipping.
   `provenance.sourceRef` (in `Sources`); `crossLinks[]` render as name +
   relationshipLine + href -- the one schema-legal way a page names a
   sibling brand.
+- **`loadBrand(path)`** (`@luh-tech/site-template/content`) reads a
+  `content/brand/<venture>.json` file and ajv-validates it against the live,
+  version-pinned `portfolio/brand-identity.schema.json`. Mirrors
+  `loadPage`/`loadSite`.
+- **`applyBrandDefaults(page, brand)`** (`@luh-tech/site-template/content`) --
+  GTM-L3 G1.1/G1.2: on the page whose `route` is `/`, returns a copy of
+  `page` with `sections[hero].heading` replaced by `brand.identity.tagline`,
+  the hero's `lede` block replaced by `brand.identity.oneLiner`, and
+  `seo.title`/`seo.description` replaced by the brand-derived pair
+  (`"<brand.name> -- <identity.oneLiner>"` / `identity.oneLiner`). Any
+  authored value it overrides logs a build warning naming the field.
+  Interior pages (`route !== '/'`) pass through unchanged -- they keep their
+  own heading and `seo`; the `"<page heading> -- <brand.name>"` title
+  pattern for interior pages is a content-authoring convention for the page
+  instance itself, not a runtime override (`seo.title`/`seo.description`
+  are schema-required non-empty strings, so there is no "empty" state for
+  either route kind to default from).
+- `SiteLayout` also appends `{ label: "LuhTech Holdings", href:
+  "https://luh.tech" }` as the last nav item on every site whose
+  `ventureRef !== "luhtech-business"`, unless the site's own `nav[]` already
+  has an entry pointing at that href.
 - **`<LeadCaptureForm leadCapture={site.leadCapture} />`** -- the real
   contact-form pattern (originally Replique's own form/script) parameterised
   off `site.leadCapture`: `destination` is a schema const shared by every
@@ -63,23 +84,27 @@ error.
 
 A migration is: author `content/site.<venture>.json` + `content/pages/*.json`
 (the content, not new copy -- lift the current live text verbatim into
-sections), add one template dependency (`@luhtech/site-template`), and
+sections), add one template dependency (`@luh-tech/site-template`), and
 replace the site's inline `index.astro` with a call into `SiteLayout` +
 `Section`:
 
 ```astro
 ---
-import { loadSite, loadPage } from '@luhtech/site-template/content';
-import SiteLayout from '@luhtech/site-template/layouts/SiteLayout.astro';
-import Section from '@luhtech/site-template/components/Section.astro';
+import { loadSite, loadPage, loadBrand, applyBrandDefaults } from '@luh-tech/site-template/content';
+import SiteLayout from '@luh-tech/site-template/layouts/SiteLayout.astro';
+import Section from '@luh-tech/site-template/components/Section.astro';
 
 const site = await loadSite('content/sites/<venture>.json');
-const page = await loadPage('content/pages/home.json');
+const brand = await loadBrand('content/brand/<venture>.json');
+const page = applyBrandDefaults(await loadPage('content/pages/home.json'), brand);
 ---
 <SiteLayout site={site} page={page}>
   {page.sections.map((s) => <Section section={s} site={site} />)}
 </SiteLayout>
 ```
+
+Every route calls `loadPage` + `applyBrandDefaults` this way, not just `/` --
+the function is a no-op on interior routes and keeps the call site uniform.
 
 `site` is passed through to every `<Section>` call but only actually used by
 the `cta` sectionKind, which embeds the real `LeadCaptureForm` directly

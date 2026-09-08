@@ -18,8 +18,19 @@ export interface Props {
 const { site, page } = Astro.props as Props;
 
 const seo = page.seo as { title: string; description: string; ogImage?: string; noindex?: boolean };
-const nav = site.nav as Array<{ label: string; href: string }>;
 const footer = site.footer as { legalLine: string; parentHref?: string };
+
+// GTM-L3 G1.3: every non-holding-company site links back to luh.tech from
+// its own nav -- the layout appends it rather than every content author
+// remembering to, and skips it if the instance already carries it (fixes
+// the Replique regression where this link was missing entirely).
+const HOLDING_NAV_ITEM = { label: 'LuhTech Holdings', href: 'https://luh.tech' };
+const rawNav = site.nav as Array<{ label: string; href: string }>;
+const ventureRef = site.ventureRef as string | undefined;
+const nav =
+  ventureRef && ventureRef !== 'luhtech-business' && !rawNav.some((item) => item.href === HOLDING_NAV_ITEM.href)
+    ? [...rawNav, HOLDING_NAV_ITEM]
+    : rawNav;
 ---
 <html lang="en">
 	<head>
