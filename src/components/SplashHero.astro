@@ -18,6 +18,13 @@
 // don't collide), the nav-logo target selector, and the optional
 // drifting background data-text lines.
 //
+// -mt-16 cancels SiteLayout's <main> py-16 top padding -- found live as a
+// visible white bar between the nav and the hero photo (screenshot report,
+// 2026-09-08): the section's own w-screen/-translate-x-1/2 breakout only
+// undoes <main>'s horizontal padding, not the vertical padding above it.
+// LuhTech-Business's own hand-built (pre-template) hero already carried
+// this exact -mt-16, just never generalized into this component before.
+//
 // heading/lede are meant to carry the SAME brand.identity.tagline/
 // oneLiner values applyBrandDefaults() binds onto a standard Hero
 // section on "/" -- this component is a presentation alternative to
@@ -61,7 +68,7 @@ const {
 
 const rowPositions = [4, 24, 40, 62, 80, 96];
 ---
-<section class="relative w-screen left-1/2 -translate-x-1/2 h-[85vh] min-h-[520px] overflow-hidden hero-motion" id="hero">
+<section class="relative w-screen left-1/2 -translate-x-1/2 -mt-16 h-[85vh] min-h-[520px] overflow-hidden hero-motion" id="hero">
 	<img src={photoSrc} alt={photoAlt} width="1376" height="768" class="absolute inset-0 w-full h-full object-cover" />
 	<div class="absolute inset-0 hero-gradient"></div>
 	{dataLines.length > 0 && (
