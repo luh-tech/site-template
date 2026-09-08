@@ -67,9 +67,9 @@ const footer = site.footer as { legalLine: string; parentHref?: string };
 		</main>
 		<footer class="bg-ink text-canvas">
 			<div class="max-w-4xl mx-auto px-6 py-8 text-sm text-canvas/60 flex items-center justify-between flex-wrap gap-3">
-				<span>{footer.legalLine}</span>
+				{!footer.parentHref && <span>{footer.legalLine}</span>}
 				{footer.parentHref && (
-					<a href={footer.parentHref} class="hover:text-canvas/90 transition-colors">A LuhTech Holdings venture</a>
+					<a href={footer.parentHref} class="hover:text-canvas/90 transition-colors">{footer.legalLine}</a>
 				)}
 			</div>
 		</footer>
