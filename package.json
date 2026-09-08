@@ -1,17 +1,21 @@
 {
-  "name": "@luh-tech/site-template",
+  "name": "@luhtech/site-template",
   "version": "0.2.0",
   "description": "Shared Astro component library + content-instance contract for LuhTech venture marketing sites -- one template renders every site from content/page.schema.json + content/site.schema.json instances.",
   "type": "module",
   "license": "Apache-2.0",
   "author": "LuhTech Holdings",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/luh-tech/site-template.git"
+  "repository": "github:luh-tech/site-template",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public",
+    "provenance": true
   },
   "files": [
     "src",
-    "bin"
+    "bin",
+    "README.md",
+    "LICENSE"
   ],
   "exports": {
     "./content": "./src/content/index.ts",

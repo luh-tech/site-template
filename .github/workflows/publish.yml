@@ -1,0 +1,24 @@
+# GTM-L3 G1.4-R (2026-09-08, supersedes G1.4's GitHub Packages publish):
+# npmjs.com trusted publishing (GitHub OIDC) -- no NPM_TOKEN anywhere,
+# no read token needed by any consumer at build time. Trusted publishing
+# requires an existing package version on npmjs first (Erik's one-time
+# manual `npm publish`, step 2 of the dispatch) before this workflow's
+# OIDC-based `npm publish` can succeed on later tags.
+name: publish
+on:
+  push:
+    tags: ['site-template-v*']
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', registry-url: 'https://registry.npmjs.org' }
+      - run: npm install -g npm@latest        # trusted publishing needs npm >= 11.5.1
+      - run: npm ci
+      - run: npm test
+      - run: npm publish --provenance --access public   # no NODE_AUTH_TOKEN: OIDC
