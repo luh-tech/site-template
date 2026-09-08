@@ -10,7 +10,12 @@ export interface Props {
 const { block, class: className = '' } = Astro.props;
 const items = block.blockType === 'list' ? block.text.split('\n').filter(Boolean) : [];
 ---
-{block.blockType === 'paragraph' && <p class={`leading-relaxed ${className}`}>{block.text}</p>}
+{block.blockType === 'paragraph' && (
+	<div class={className}>
+		{block.label && <p class="font-display font-semibold text-accent-secondary mb-1">{block.label}</p>}
+		<p class="leading-relaxed">{block.text}</p>
+	</div>
+)}
 {block.blockType === 'lede' && <p class={`text-lg leading-relaxed ${className}`}>{block.text}</p>}
 {block.blockType === 'pullquote' && (
 	<blockquote class={`border-l-4 border-accent-primary pl-4 italic text-lg ${className}`}>{block.text}</blockquote>
@@ -23,7 +28,10 @@ const items = block.blockType === 'list' ? block.text.split('\n').filter(Boolean
 )}
 {block.blockType === 'caption' && <p class={`text-sm text-ink/60 ${className}`}>{block.text}</p>}
 {block.blockType === 'list' && (
-	<ul class={`list-disc list-inside space-y-1 ${className}`}>
-		{items.map((item) => <li>{item}</li>)}
-	</ul>
+	<div class={className}>
+		{block.label && <p class="font-display font-semibold mb-1">{block.label}</p>}
+		<ul class="list-disc list-inside space-y-1">
+			{items.map((item) => <li>{item}</li>)}
+		</ul>
+	</div>
 )}
