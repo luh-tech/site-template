@@ -1,0 +1,272 @@
+---
+// A trigger-flow hero: a full-bleed photo hero plays a one-time splash
+// intro on load (wireframe -> white-fill wave -> fly-out into the nav
+// logo's real on-screen position), then never repeats for that session.
+// Lifted out of Ectropy's own hand-built index.astro (2026-09-03 v2, its
+// own header comment explains the motion design rationale) into a real,
+// parameterized component so any venture's landing page can opt into the
+// same trigger pattern with its own photo/wordmark/copy/session key --
+// not a one-off, not copy-pasted per site.
+//
+// What's fixed (the motion mechanics, proven live on ectropy.ai): two
+// independent fixed layers (overlay shade + wordmark), stage timing,
+// reduced-motion / sessionStorage-repeat handling, the fly-out math
+// (measured against the real nav-logo rect at play time, not a guessed
+// offset). What's parameterized: the photo, the wordmark SVG markup +
+// viewBox, the heading/lede/eyebrow/ctas, the session key (so two splash
+// heroes on the same origin -- e.g. a future article-landing variant --
+// don't collide), the nav-logo target selector, and the optional
+// drifting background data-text lines.
+//
+// heading/lede are meant to carry the SAME brand.identity.tagline/
+// oneLiner values applyBrandDefaults() binds onto a standard Hero
+// section on "/" -- this component is a presentation alternative to
+// Hero.astro for a page that wants the trigger-flow treatment, not a
+// different binding rule. A consumer still calls applyBrandDefaults()
+// and reads heading/lede off the result the same way.
+import CtaLink from './CtaLink.astro';
+
+export interface Props {
+	photoSrc: string;
+	photoAlt: string;
+	eyebrow?: string;
+	heading: string;
+	lede: string;
+	ctas?: Array<{ label: string; href: string; intent: string }>;
+	/** Raw <polygon>/<path> markup for the wordmark SVG (no outer <svg> tag). */
+	wordmarkMarkup: string;
+	/** viewBox for the wordmark <svg>, e.g. "-50 -50 1100 286". */
+	wordmarkViewBox: string;
+	wordmarkAriaLabel: string;
+	/** Unique per venture/page -- sessionStorage key so the splash plays once per session, independently of any other SplashHero on the same origin. */
+	sessionKey: string;
+	/** CSS selector for the fly-out landing target, evaluated at play time. Default matches SiteLayout's own nav logo anchor. */
+	navLogoSelector?: string;
+	/** Optional drifting background data-text layer -- real, venture-specific short strings (not decorative lorem), low-opacity texture behind the hero copy. Omit to skip the layer entirely. */
+	dataLines?: string[];
+}
+
+const {
+	photoSrc,
+	photoAlt,
+	eyebrow,
+	heading,
+	lede,
+	ctas = [],
+	wordmarkMarkup,
+	wordmarkViewBox,
+	wordmarkAriaLabel,
+	sessionKey,
+	navLogoSelector = 'header a[href="/"]',
+	dataLines = [],
+} = Astro.props;
+
+const rowPositions = [4, 24, 40, 62, 80, 96];
+---
+<section class="relative w-full h-[85vh] min-h-[520px] overflow-hidden hero-motion" id="hero">
+	<img src={photoSrc} alt={photoAlt} width="1376" height="768" class="absolute inset-0 w-full h-full object-cover" />
+	<div class="absolute inset-0 hero-gradient"></div>
+	{dataLines.length > 0 && (
+		<div class="absolute -inset-[10%] hero-datatext" id={`hero-datatext-${sessionKey}`} aria-hidden="true"></div>
+	)}
+	<div class="relative z-10 h-full flex flex-col items-start justify-end pb-20 px-6 sm:px-10 max-w-3xl mx-auto w-full">
+		<div class="flex items-start gap-4 sm:gap-5">
+			<span class="hero-rule w-0.5 self-stretch rounded-full mt-1" aria-hidden="true"></span>
+			<div>
+				{eyebrow && (
+					<p class="font-mono text-xs sm:text-sm tracking-[0.14em] uppercase text-accent-secondary mb-3">{eyebrow}</p>
+				)}
+				<h1 class="font-display text-4xl sm:text-5xl md:text-6xl font-semibold text-canvas leading-[1.12]">{heading}</h1>
+			</div>
+		</div>
+		<p class="mt-5 text-lg text-canvas/85 max-w-2xl">{lede}</p>
+		{ctas.length > 0 && (
+			<div class="mt-8 flex gap-4">
+				{ctas.map((cta, i) => <CtaLink cta={cta} variant={i === 0 ? 'primary' : 'secondary'} />)}
+			</div>
+		)}
+	</div>
+</section>
+<!-- Two independent fixed layers, not nested: the overlay's own "lift up"
+     exit transform would otherwise become the containing block for the
+     wordmark's fixed-position fly-out, compounding the two motions
+     together instead of letting them animate independently toward two
+     different targets. -->
+<div class="splash-overlay" id={`splash-overlay-${sessionKey}`}></div>
+<div class="splash-wordmark-wrap" id={`splash-wordmark-wrap-${sessionKey}`}>
+	<svg
+		class="splash-wordmark"
+		id={`splash-wordmark-${sessionKey}`}
+		xmlns="http://www.w3.org/2000/svg"
+		viewBox={wordmarkViewBox}
+		role="img"
+		aria-label={wordmarkAriaLabel}
+		set:html={wordmarkMarkup}
+	/>
+</div>
+
+<style>
+	.hero-gradient{
+		background:
+			linear-gradient(to top, rgba(13,13,13,0.92) 0%, rgba(13,13,13,0.55) 35%, rgba(13,13,13,0.15) 65%, rgba(13,13,13,0.35) 100%),
+			linear-gradient(120deg, rgba(30,58,138,0.25), rgba(13,13,13,0) 55%);
+	}
+	.hero-datatext{
+		pointer-events: none;
+		overflow: hidden;
+		mix-blend-mode: overlay;
+		font-family: "JetBrains Mono", monospace;
+		font-size: 12px;
+		line-height: 1.9;
+		color: #BFD3F5;
+		white-space: pre;
+		letter-spacing: 0.02em;
+	}
+	.hero-datatext :global(.row){
+		display: block;
+		position: absolute;
+		left: 0;
+		white-space: nowrap;
+		animation: hero-drift linear infinite;
+	}
+	@keyframes hero-drift{ from{ transform: translateX(0); } to{ transform: translateX(-50%); } }
+
+	.hero-rule{ background: var(--color-accent-secondary); }
+
+	.splash-overlay{
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		background: radial-gradient(ellipse at 50% 45%, rgba(20,28,48,0.55) 0%, rgba(8,9,12,0.7) 75%);
+		transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+	.splash-overlay.hide{
+		transform: translateY(-100%);
+		pointer-events: none;
+	}
+	.splash-wordmark-wrap{
+		position: fixed;
+		inset: 0;
+		z-index: 101;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		pointer-events: none;
+	}
+	.splash-wordmark{ width: min(640px, 80vw); height: auto; overflow: visible; }
+	.splash-wordmark :global(polygon),
+	.splash-wordmark :global(path){
+		fill: #FFFFFF;
+		fill-opacity: 0;
+		stroke: #FFFFFF;
+		stroke-opacity: 0;
+		transition: stroke-opacity 0.6s ease-out,
+			fill-opacity 1s ease-out var(--fill-delay, 0s);
+	}
+	.splash-wordmark.wireframe :global(polygon),
+	.splash-wordmark.wireframe :global(path){ stroke-opacity: 0.9; }
+	.splash-wordmark.filled :global(polygon),
+	.splash-wordmark.filled :global(path){ stroke-opacity: 1; fill-opacity: 1; }
+	.splash-wordmark.fly-out{
+		transform-origin: top left;
+		transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	@media (prefers-reduced-motion: reduce){
+		.hero-datatext :global(.row){ animation: none !important; transition: none !important; }
+		.splash-overlay, .splash-wordmark-wrap{ display: none !important; }
+	}
+</style>
+
+<script define:vars={{ sessionKey, navLogoSelector, dataLines, rowPositions }}>
+	if (dataLines.length > 0) {
+		const datatext = document.getElementById(`hero-datatext-${sessionKey}`);
+		if (datatext) {
+			rowPositions.forEach((topPct, r) => {
+				const row = document.createElement('span');
+				row.className = 'row';
+				row.style.top = topPct + '%';
+				row.style.opacity = String(0.5 + (r % 3) * 0.15);
+				const text = dataLines[r % dataLines.length];
+				row.textContent = (text + '          ').repeat(5);
+				row.style.animationDuration = (55 + r * 9) + 's';
+				row.style.animationDirection = r % 2 ? 'reverse' : 'normal';
+				datatext.appendChild(row);
+			});
+		}
+	}
+
+	// Splash intro: wireframe -> white fill wave -> fly out to the nav
+	// logo's real position. Each polygon/path needs a data-cx attribute
+	// (real horizontal centroid) to drive the wave direction -- markup
+	// without it just fills on a single beat instead of a wave, which is
+	// still a correct (if less dramatic) fallback, not a broken state.
+	// Plays once per session (sessionStorage, keyed by sessionKey),
+	// skipped entirely under reduced-motion.
+	const SEEN_KEY = `splash-seen-${sessionKey}`;
+	const splash = document.getElementById(`splash-overlay-${sessionKey}`);
+	const wordmarkWrap = document.getElementById(`splash-wordmark-wrap-${sessionKey}`);
+	const wordmark = document.getElementById(`splash-wordmark-${sessionKey}`);
+	const navLogo = navLogoSelector ? document.querySelector(navLogoSelector) : null;
+
+	function skipSplash() {
+		if (splash) splash.style.display = 'none';
+		if (wordmarkWrap) wordmarkWrap.style.display = 'none';
+	}
+
+	let alreadySeen = false;
+	try {
+		alreadySeen = sessionStorage.getItem(SEEN_KEY) === '1';
+	} catch {
+		// sessionStorage unavailable (private mode, etc) -- fail open and play the splash
+	}
+
+	if (
+		splash && wordmarkWrap && wordmark && !alreadySeen &&
+		!window.matchMedia('(prefers-reduced-motion: reduce)').matches
+	) {
+		try { sessionStorage.setItem(SEEN_KEY, '1'); } catch {}
+
+		if (navLogo) navLogo.style.opacity = '0';
+
+		const polys = [...wordmark.querySelectorAll('polygon, path')];
+		const xs = polys.map((p) => parseFloat(p.dataset.cx || '0'));
+		const xmin = Math.min(...xs);
+		const xmax = Math.max(...xs);
+		const range = xmax - xmin || 1;
+		const WAVE_MS = 1600;
+		polys.forEach((p, i) => {
+			const t = (xs[i] - xmin) / range;
+			p.style.setProperty('--fill-delay', t * WAVE_MS + 'ms');
+		});
+		const FILL_DONE = 500 + WAVE_MS + 1000;
+		const HOLD_MS = 700;
+		const EXIT_MS = 800;
+
+		requestAnimationFrame(() => wordmark.classList.add('wireframe'));
+		setTimeout(() => wordmark.classList.add('filled'), 500);
+
+		setTimeout(() => {
+			if (navLogo) {
+				const navRect = navLogo.getBoundingClientRect();
+				const wmRect = wordmark.getBoundingClientRect();
+				if (navRect.width > 0 && wmRect.width > 0) {
+					const scale = navRect.width / wmRect.width;
+					const dx = navRect.left - wmRect.left;
+					const dy = navRect.top - wmRect.top;
+					wordmark.classList.add('fly-out');
+					wordmark.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+				}
+			}
+			splash.classList.add('hide');
+		}, FILL_DONE + HOLD_MS);
+
+		setTimeout(() => {
+			if (navLogo) navLogo.style.opacity = '';
+			skipSplash();
+		}, FILL_DONE + HOLD_MS + EXIT_MS);
+	} else {
+		if (navLogo) navLogo.style.opacity = '';
+		skipSplash();
+	}
+</script>

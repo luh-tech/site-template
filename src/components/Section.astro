@@ -16,6 +16,7 @@ import Status from './sections/Status.astro';
 import Sources from './sections/Sources.astro';
 import Cta from './sections/Cta.astro';
 import Legal from './sections/Legal.astro';
+import CrossLink from './CrossLink.astro';
 
 const SECTION_COMPONENTS: Record<string, any> = {
 	hero: Hero,
@@ -46,3 +47,17 @@ if (!Component) {
 ) : (
 	<Component section={section} />
 )}
+{
+	// crossLinks[] is schema-legal on any section kind (not sectionKind-
+	// specific), so it renders once here rather than requiring every
+	// individual sections/*.astro component to remember to. Found live:
+	// about.json/insights.json's crossLinks entries (hero/proof kinds)
+	// were silently invisible before this fix -- only Open.astro rendered
+	// them. Open.astro's own inline rendering was removed to avoid a
+	// double-render now that this is the single path.
+	section.crossLinks?.length > 0 && (
+		<div class="grid gap-3 sm:grid-cols-2 mt-4" data-reveal>
+			{section.crossLinks.map((cl: any) => <CrossLink crossLink={cl} />)}
+		</div>
+	)
+}
