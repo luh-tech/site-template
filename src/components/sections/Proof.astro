@@ -6,6 +6,7 @@
 // are cited, provenance.public numbers, never customer-use statements.
 import Block from '../Block.astro';
 import Figure from '../Figure.astro';
+import CrossLink from '../CrossLink.astro';
 
 export interface Props { section: any }
 const { section } = Astro.props;
@@ -23,6 +24,11 @@ const { section } = Astro.props;
 	{section.figures?.length > 0 && (
 		<div class="grid grid-cols-2 sm:grid-cols-3 gap-6 mt-4">
 			{section.figures.map((f: any) => <Figure figure={f} />)}
+		</div>
+	)}
+	{section.crossLinks?.length > 0 && (
+		<div class="grid gap-3 sm:grid-cols-2 mt-4">
+			{section.crossLinks.map((cl: any) => <CrossLink crossLink={cl} />)}
 		</div>
 	)}
 </section>

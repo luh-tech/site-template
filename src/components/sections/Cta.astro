@@ -10,6 +10,7 @@
 import Block from '../Block.astro';
 import CtaLink from '../CtaLink.astro';
 import LeadCaptureForm from '../LeadCaptureForm.astro';
+import CrossLink from '../CrossLink.astro';
 
 export interface Props {
 	section: any;
@@ -32,5 +33,10 @@ const { section, leadCapture, companyLabel } = Astro.props;
 				{section.ctas.map((c: any, i: number) => <CtaLink cta={c} variant={i === 0 ? 'primary' : 'secondary'} />)}
 			</div>
 		)
+	)}
+	{section.crossLinks?.length > 0 && (
+		<div class="grid gap-3 sm:grid-cols-2 mt-6 max-w-md mx-auto text-left">
+			{section.crossLinks.map((cl: any) => <CrossLink crossLink={cl} />)}
+		</div>
 	)}
 </section>

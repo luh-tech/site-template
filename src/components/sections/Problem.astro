@@ -2,6 +2,7 @@
 // sectionKind: problem -- the system-level framing, never worker-blame
 // (per the schema's own description of this sectionKind).
 import Block from '../Block.astro';
+import CrossLink from '../CrossLink.astro';
 
 export interface Props { section: any }
 const { section } = Astro.props;
@@ -11,4 +12,9 @@ const { section } = Astro.props;
 	{section.heading && <h2 class="font-display text-2xl font-bold mb-3">{section.heading}</h2>}
 	{section.subheading && <p class="text-ink/80 max-w-2xl mb-4">{section.subheading}</p>}
 	{section.blocks?.map((b: any) => <Block block={b} class="mb-3" />)}
+	{section.crossLinks?.length > 0 && (
+		<div class="grid gap-3 sm:grid-cols-2 mt-4">
+			{section.crossLinks.map((cl: any) => <CrossLink crossLink={cl} />)}
+		</div>
+	)}
 </section>
