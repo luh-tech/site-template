@@ -1,0 +1,18 @@
+---
+// Renders one page.schema.json crossLink -- the only schema-legal way a
+// section may name a sibling brand (RULE-CONTENT-PAGE-LEXICON-PROHIBITED-1
+// exempts crossLinks from the bare-sibling-name check for exactly this
+// reason: the relationshipLine is authored text stating the real
+// relationship, not an incidental mention).
+export interface Props {
+	crossLink: { brandRef: string; relationshipLine: string; href: string };
+}
+const { crossLink } = Astro.props;
+---
+<a
+	href={crossLink.href}
+	class="block rounded-md border border-ink/15 p-4 hover:border-accent-primary transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary"
+>
+	<span class="font-display font-semibold">{crossLink.brandRef}</span>
+	<p class="text-sm text-ink/70 mt-1">{crossLink.relationshipLine}</p>
+</a>

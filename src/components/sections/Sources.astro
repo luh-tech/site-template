@@ -1,0 +1,17 @@
+---
+// sectionKind: sources -- citations for every figure used on the page,
+// each figure's provenance.sourceRef rendered as a full citation.
+export interface Props { section: any }
+const { section } = Astro.props;
+---
+<section id={section.sectionId} class="py-8 border-t border-ink/10" data-reveal>
+	{section.heading && <h2 class="font-display text-xl font-bold mb-4">{section.heading}</h2>}
+	<ol class="space-y-2 text-sm text-ink/70">
+		{section.figures?.map((f: any) => (
+			<li>
+				<strong>{f.value}{f.unit ? ` ${f.unit}` : ''}</strong> — {f.provenance.sourceRef}
+				{f.provenance.observedAt && ` (observed ${f.provenance.observedAt})`}
+			</li>
+		))}
+	</ol>
+</section>

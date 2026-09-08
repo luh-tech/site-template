@@ -1,0 +1,28 @@
+---
+// sectionKind: proof -- evidence: standards, published contracts, citations,
+// and (only when a citable public record exists) customers/pilots/projects.
+// claims[].text is the marketed-capability prose itself (the honesty rail
+// that luhtech-page-claims enforces against real feature status); figures
+// are cited, provenance.public numbers, never customer-use statements.
+import Block from '../Block.astro';
+import Figure from '../Figure.astro';
+
+export interface Props { section: any }
+const { section } = Astro.props;
+---
+<section id={section.sectionId} class="py-8" data-reveal>
+	{section.eyebrow && <p class="text-sm font-mono uppercase tracking-wide text-accent-primary mb-3">{section.eyebrow}</p>}
+	{section.heading && <h2 class="font-display text-2xl font-bold mb-3">{section.heading}</h2>}
+	{section.subheading && <p class="text-ink/80 max-w-2xl mb-4">{section.subheading}</p>}
+	{section.blocks?.map((b: any) => <Block block={b} class="mb-3" />)}
+	{section.claims?.length > 0 && (
+		<ul class="space-y-2 mb-6">
+			{section.claims.map((c: any) => <li class="leading-relaxed">{c.text}</li>)}
+		</ul>
+	)}
+	{section.figures?.length > 0 && (
+		<div class="grid grid-cols-2 sm:grid-cols-3 gap-6 mt-4">
+			{section.figures.map((f: any) => <Figure figure={f} />)}
+		</div>
+	)}
+</section>

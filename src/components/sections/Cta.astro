@@ -1,0 +1,18 @@
+---
+// sectionKind: cta -- lead-capture.
+import Block from '../Block.astro';
+import CtaLink from '../CtaLink.astro';
+
+export interface Props { section: any }
+const { section } = Astro.props;
+---
+<section id={section.sectionId} class="py-12 text-center border-t border-ink/10" data-reveal>
+	{section.heading && <h2 class="font-display text-2xl font-bold mb-3">{section.heading}</h2>}
+	{section.subheading && <p class="text-ink/80 max-w-xl mx-auto mb-6">{section.subheading}</p>}
+	{section.blocks?.map((b: any) => <Block block={b} class="mb-4" />)}
+	{section.ctas?.length > 0 && (
+		<div class="flex gap-4 justify-center flex-wrap">
+			{section.ctas.map((c: any, i: number) => <CtaLink cta={c} variant={i === 0 ? 'primary' : 'secondary'} />)}
+		</div>
+	)}
+</section>

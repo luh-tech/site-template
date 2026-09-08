@@ -1,0 +1,23 @@
+---
+// Renders one page.schema.json figure with its provenance.sourceRef --
+// provenance.public must be true (schema const), so every figure that
+// reaches this component is already cleared to appear on a public page.
+export interface Props {
+	figure: {
+		figureId: string;
+		value: string;
+		unit?: string;
+		provenance: { sourceRef: string; observedAt?: string };
+	};
+}
+const { figure } = Astro.props;
+---
+<div class="flex flex-col gap-1" id={figure.figureId}>
+	<span class="font-display text-3xl font-bold">
+		{figure.value}{figure.unit && <span class="text-lg font-normal ml-1">{figure.unit}</span>}
+	</span>
+	<span class="text-xs text-ink/60">
+		{figure.provenance.sourceRef}
+		{figure.provenance.observedAt && ` (${figure.provenance.observedAt})`}
+	</span>
+</div>

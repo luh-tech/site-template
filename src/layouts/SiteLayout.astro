@@ -1,0 +1,96 @@
+---
+// Renders every LuhTech venture site from validated content/page.schema.json
+// + content/site.schema.json instances (see ../content/loadPage.ts,
+// ../content/loadSite.ts). Nav from site.nav, footer from
+// site.footer.legalLine + parentHref, <head> from page.seo.
+//
+// page.seo.ogImage's "must not be a staging host" rule is enforced by the
+// schema itself (a regex pattern rejecting any host containing "staging"),
+// not by this layout -- loadPage() already fails the build on a violation
+// before this component ever renders.
+import type { LoadedPage } from '../content/loadPage.js';
+import type { LoadedSite } from '../content/loadSite.js';
+
+export interface Props {
+	site: LoadedSite;
+	page: LoadedPage;
+}
+const { site, page } = Astro.props as Props;
+
+const seo = page.seo as { title: string; description: string; ogImage?: string; noindex?: boolean };
+const nav = site.nav as Array<{ label: string; href: string }>;
+const footer = site.footer as { legalLine: string; parentHref?: string };
+---
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{seo.title}</title>
+		<meta name="description" content={seo.description} />
+		{seo.noindex && <meta name="robots" content="noindex, nofollow" />}
+
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={seo.title} />
+		<meta property="og:description" content={seo.description} />
+		{seo.ogImage && <meta property="og:image" content={seo.ogImage} />}
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={seo.title} />
+		<meta name="twitter:description" content={seo.description} />
+		{seo.ogImage && <meta name="twitter:image" content={seo.ogImage} />}
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+			rel="stylesheet"
+		/>
+		<slot name="head" />
+	</head>
+	<body class="bg-canvas text-ink min-h-screen flex flex-col font-body">
+		<a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-accent-primary focus:text-canvas focus:rounded-md">
+			Skip to content
+		</a>
+		<header class="bg-ink text-canvas">
+			<nav class="max-w-4xl mx-auto flex items-center justify-between px-6 py-4">
+				<a href="/" class="font-display font-semibold tracking-tight transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:rounded">
+					<slot name="logo" />
+				</a>
+				<ul class="flex items-center gap-6 text-sm">
+					{nav.map((item) => (
+						<li><a href={item.href} class="hover:text-accent-primary transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:rounded">{item.label}</a></li>
+					))}
+				</ul>
+			</nav>
+		</header>
+		<main id="main-content" class="flex-1 max-w-4xl mx-auto w-full px-6 py-16">
+			<slot />
+		</main>
+		<footer class="bg-ink text-canvas">
+			<div class="max-w-4xl mx-auto px-6 py-8 text-sm text-canvas/60 flex items-center justify-between flex-wrap gap-3">
+				<span>{footer.legalLine}</span>
+				{footer.parentHref && (
+					<a href={footer.parentHref} class="hover:text-canvas/90 transition-colors">A LuhTech Holdings venture</a>
+				)}
+			</div>
+		</footer>
+		<script>
+			const revealTargets = document.querySelectorAll('[data-reveal]');
+			if ('IntersectionObserver' in window && revealTargets.length) {
+				const observer = new IntersectionObserver(
+					(entries) => {
+						for (const entry of entries) {
+							if (entry.isIntersecting) {
+								entry.target.classList.add('is-visible');
+								observer.unobserve(entry.target);
+							}
+						}
+					},
+					{ threshold: 0.2, rootMargin: '0px 0px -10% 0px' }
+				);
+				revealTargets.forEach((el) => observer.observe(el));
+			} else {
+				revealTargets.forEach((el) => el.classList.add('is-visible'));
+			}
+		</script>
+	</body>
+</html>

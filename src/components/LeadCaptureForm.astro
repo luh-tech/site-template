@@ -1,0 +1,102 @@
+---
+// Parameterises Replique's own contact form/script (the L1 fixture pattern)
+// off site.leadCapture: destination is a schema const (every site posts to
+// the same n8n webhook), source/ventureField/honeypotField/minSubmitMs vary
+// per site. Also sends `utm` from the query string, matching every real
+// venture contact form on the portfolio.
+export interface Props {
+	leadCapture: {
+		destination: string;
+		source: string;
+		ventureField: string;
+		honeypotField: string;
+		minSubmitMs?: number;
+	};
+	heading?: string;
+}
+const { leadCapture, heading = 'Get in touch' } = Astro.props;
+const minSubmitMs = leadCapture.minSubmitMs ?? 2000;
+---
+<form id="lead-capture-form" class="max-w-md space-y-4" data-destination={leadCapture.destination} data-source={leadCapture.source} data-venture={leadCapture.ventureField} data-honeypot={leadCapture.honeypotField} data-min-submit-ms={minSubmitMs}>
+	{heading && <h2 class="font-display text-2xl font-bold mb-2">{heading}</h2>}
+	<div>
+		<label for="lc-name" class="block text-sm font-medium mb-1">Name</label>
+		<input type="text" id="lc-name" name="name" required class="w-full px-3 py-2 rounded-md border border-ink/20 bg-canvas text-ink" />
+	</div>
+	<div>
+		<label for="lc-email" class="block text-sm font-medium mb-1">Email</label>
+		<input type="email" id="lc-email" name="email" required class="w-full px-3 py-2 rounded-md border border-ink/20 bg-canvas text-ink" />
+	</div>
+	<div>
+		<label for="lc-company" class="block text-sm font-medium mb-1">Company (optional)</label>
+		<input type="text" id="lc-company" name="company" class="w-full px-3 py-2 rounded-md border border-ink/20 bg-canvas text-ink" />
+	</div>
+	<div>
+		<label for="lc-message" class="block text-sm font-medium mb-1">Message</label>
+		<textarea id="lc-message" name="message" required rows="4" class="w-full px-3 py-2 rounded-md border border-ink/20 bg-canvas text-ink"></textarea>
+	</div>
+	<!-- Honeypot -- hidden from real users via CSS, bots fill every field they see -->
+	<div class="hidden" aria-hidden="true">
+		<label for={`lc-${leadCapture.honeypotField}`}>Website</label>
+		<input type="text" id={`lc-${leadCapture.honeypotField}`} name={leadCapture.honeypotField} tabindex="-1" autocomplete="off" />
+	</div>
+	<button type="submit" class="px-5 py-2.5 rounded-md bg-accent-primary text-canvas font-medium transition-all duration-200 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-secondary focus-visible:rounded">
+		Send
+	</button>
+	<p id="lead-capture-status" class="text-sm" role="status"></p>
+</form>
+
+<script>
+	const form = document.getElementById('lead-capture-form') as HTMLFormElement;
+	const status = document.getElementById('lead-capture-status') as HTMLParagraphElement;
+	const loadedAt = Date.now();
+
+	const destination = form.dataset.destination!;
+	const source = form.dataset.source!;
+	const venture = form.dataset.venture!;
+	const honeypotField = form.dataset.honeypot!;
+	const minSubmitMs = Number(form.dataset.minSubmitMs ?? '2000');
+
+	form.addEventListener('submit', async (e) => {
+		e.preventDefault();
+
+		const data = new FormData(form);
+
+		// Honeypot: a real visitor never fills this (hidden via CSS, no autocomplete).
+		if ((data.get(honeypotField) as string)?.length > 0) return;
+
+		// Time-to-submit: a form filled and submitted faster than minSubmitMs is
+		// almost certainly scripted, not a human reading the page first.
+		if (Date.now() - loadedAt < minSubmitMs) return;
+
+		const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+		submitBtn.disabled = true;
+		status.textContent = 'Sending...';
+
+		try {
+			const res = await fetch(destination, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					name: data.get('name'),
+					email: data.get('email'),
+					company: data.get('company') || undefined,
+					message: data.get('message'),
+					source,
+					venture,
+					utm: Object.fromEntries(new URLSearchParams(window.location.search)),
+				}),
+			});
+			if (res.ok) {
+				status.textContent = "Thanks -- we'll be in touch.";
+				form.reset();
+			} else {
+				status.textContent = 'Something went wrong. Try again in a moment.';
+				submitBtn.disabled = false;
+			}
+		} catch {
+			status.textContent = 'Something went wrong. Try again in a moment.';
+			submitBtn.disabled = false;
+		}
+	});
+</script>
