@@ -11,18 +11,18 @@
 // This loader falls back to a vendored local copy for that one schema only,
 // fetched from the real schema-registry source (not fabricated), and never
 // silently swallows a 404 for any other schema.
+//
+// The fallback is a static JSON import, not a runtime readFileSync -- a
+// bundled build (Vite/Rollup, which Astro uses) relocates compiled chunks
+// without knowing to also copy an fs-read sidecar file, producing an ENOENT
+// at build time (found live during the first real consumer build, GTM-L2
+// C3). A static import lets the bundler inline the JSON content itself,
+// sidestepping the asset-copy problem entirely.
 
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import capabilityClaimFallback from './_vendored-schema-fallback/capability-claim.schema.json';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const VENDORED_FALLBACK: Record<string, string> = {
-  'content/capability-claim.schema.json': join(
-    __dirname,
-    '_vendored-schema-fallback/capability-claim.schema.json'
-  ),
+const VENDORED_FALLBACK: Record<string, unknown> = {
+  'content/capability-claim.schema.json': capabilityClaimFallback,
 };
 
 const cache = new Map<string, unknown>();
@@ -48,7 +48,7 @@ export async function fetchSchema(pinnedPath: string, version: string): Promise<
     console.warn(
       `[site-template] ${pinnedPath}@${version} unreachable at ${url} (known publish-pipeline gap) -- using vendored fallback.`
     );
-    schema = JSON.parse(readFileSync(fallback, 'utf-8'));
+    schema = fallback;
   }
   cache.set(cacheKey, schema);
   return schema;
