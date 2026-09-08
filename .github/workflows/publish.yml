@@ -4,6 +4,17 @@
 # requires an existing package version on npmjs first (Erik's one-time
 # manual `npm publish`, step 2 of the dispatch) before this workflow's
 # OIDC-based `npm publish` can succeed on later tags.
+#
+# No `registry-url` on setup-node: that input always writes a
+# `//<registry>/:_authToken=${NODE_AUTH_TOKEN}` line to .npmrc, and since
+# this workflow never sets NODE_AUTH_TOKEN (the point of OIDC), that line
+# evaluates empty but npm still reads it as "auth is configured" and skips
+# the OIDC identity-token exchange -- `npm publish` then fails with
+# IDENTITY_TOKEN_READ_ERROR (found live, 0.2.1 run 34245203670; confirmed
+# against npm's own trusted-publishing docs: "Do not set the registry-url
+# option in the actions when using trusted publishing"). package.json's
+# publishConfig.registry already points npm at npmjs -- setup-node's
+# registry-url was redundant as well as broken here.
 name: publish
 on:
   push:
@@ -17,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '22', registry-url: 'https://registry.npmjs.org' }
+        with: { node-version: '22' }
       - run: npm install -g npm@latest        # trusted publishing needs npm >= 11.5.1
       - run: npm ci
       - run: npm test
