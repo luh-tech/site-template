@@ -24,8 +24,6 @@
 // Hero.astro for a page that wants the trigger-flow treatment, not a
 // different binding rule. A consumer still calls applyBrandDefaults()
 // and reads heading/lede off the result the same way.
-import CtaLink from './CtaLink.astro';
-
 export interface Props {
 	photoSrc: string;
 	photoAlt: string;
@@ -63,7 +61,7 @@ const {
 
 const rowPositions = [4, 24, 40, 62, 80, 96];
 ---
-<section class="relative w-full h-[85vh] min-h-[520px] overflow-hidden hero-motion" id="hero">
+<section class="relative w-screen left-1/2 -translate-x-1/2 h-[85vh] min-h-[520px] overflow-hidden hero-motion" id="hero">
 	<img src={photoSrc} alt={photoAlt} width="1376" height="768" class="absolute inset-0 w-full h-full object-cover" />
 	<div class="absolute inset-0 hero-gradient"></div>
 	{dataLines.length > 0 && (
@@ -81,8 +79,17 @@ const rowPositions = [4, 24, 40, 62, 80, 96];
 		</div>
 		<p class="mt-5 text-lg text-canvas/85 max-w-2xl">{lede}</p>
 		{ctas.length > 0 && (
-			<div class="mt-8 flex gap-4">
-				{ctas.map((cta, i) => <CtaLink cta={cta} variant={i === 0 ? 'primary' : 'secondary'} />)}
+			<div class="mt-8 flex gap-4 flex-wrap">
+				{ctas.map((cta, i) => (
+					<a
+						href={cta.href}
+						class={i === 0
+							? 'px-5 py-2.5 rounded-md bg-accent-secondary text-ink font-medium transition-all duration-200 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-secondary focus-visible:rounded'
+							: 'px-5 py-2.5 rounded-md border border-canvas/40 text-canvas font-medium transition-all duration-200 hover:border-canvas/70 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-secondary focus-visible:rounded'}
+					>
+						{cta.label}
+					</a>
+				))}
 			</div>
 		)}
 	</div>
