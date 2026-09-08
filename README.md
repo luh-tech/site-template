@@ -72,16 +72,23 @@ replace the site's inline `index.astro` with a call into `SiteLayout` +
 import { loadSite, loadPage } from '@luhtech/site-template/content';
 import SiteLayout from '@luhtech/site-template/layouts/SiteLayout.astro';
 import Section from '@luhtech/site-template/components/Section.astro';
-import LeadCaptureForm from '@luhtech/site-template/components/LeadCaptureForm.astro';
 
 const site = await loadSite('content/sites/<venture>.json');
 const page = await loadPage('content/pages/home.json');
 ---
 <SiteLayout site={site} page={page}>
-  {page.sections.map((s) => <Section section={s} />)}
-  <LeadCaptureForm leadCapture={site.leadCapture} />
+  {page.sections.map((s) => <Section section={s} site={site} />)}
 </SiteLayout>
 ```
+
+`site` is passed through to every `<Section>` call but only actually used by
+the `cta` sectionKind, which embeds the real `LeadCaptureForm` directly
+(matching the schema's own description of `cta`: "lead-capture"). Don't also
+render a standalone `<LeadCaptureForm>` when the page has a `cta` section --
+the two would duplicate the heading and produce a dead-end button ahead of
+the real form (found live during Replique's migration, GTM-L2 C3). A page
+with no `cta` section can still render `<LeadCaptureForm leadCapture=
+{site.leadCapture} />` directly wherever it needs one.
 
 Run `luhtech-tokens content/brand/<brand>.json src/styles/tokens.generated.css`
 in `predev`/`prebuild` as before. Run both check bins in CI against every

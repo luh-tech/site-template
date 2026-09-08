@@ -12,9 +12,15 @@ export interface Props {
 		honeypotField: string;
 		minSubmitMs?: number;
 	};
+	/** Pass "" (or omit and let the default apply) -- pass "" explicitly when
+	 *  a wrapping section (e.g. Section.astro's Cta) already rendered its own
+	 *  heading, so the two don't duplicate. */
 	heading?: string;
+	/** Overrides the "Company (optional)" field label -- some ventures (e.g.
+	 *  Replique, a research-bench product) have a more accurate term. */
+	companyLabel?: string;
 }
-const { leadCapture, heading = 'Get in touch' } = Astro.props;
+const { leadCapture, heading = 'Get in touch', companyLabel = 'Company (optional)' } = Astro.props;
 const minSubmitMs = leadCapture.minSubmitMs ?? 2000;
 ---
 <form id="lead-capture-form" class="max-w-md space-y-4" data-destination={leadCapture.destination} data-source={leadCapture.source} data-venture={leadCapture.ventureField} data-honeypot={leadCapture.honeypotField} data-min-submit-ms={minSubmitMs}>
@@ -28,7 +34,7 @@ const minSubmitMs = leadCapture.minSubmitMs ?? 2000;
 		<input type="email" id="lc-email" name="email" required class="w-full px-3 py-2 rounded-md border border-ink/20 bg-canvas text-ink" />
 	</div>
 	<div>
-		<label for="lc-company" class="block text-sm font-medium mb-1">Company (optional)</label>
+		<label for="lc-company" class="block text-sm font-medium mb-1">{companyLabel}</label>
 		<input type="text" id="lc-company" name="company" class="w-full px-3 py-2 rounded-md border border-ink/20 bg-canvas text-ink" />
 	</div>
 	<div>

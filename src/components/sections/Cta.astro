@@ -1,18 +1,36 @@
 ---
-// sectionKind: cta -- lead-capture.
+// sectionKind: cta -- lead-capture (per the schema's own description of
+// this sectionKind). Embeds LeadCaptureForm directly when leadCapture is
+// provided, so a page's real form appears exactly once, with the section's
+// own authored heading/blocks as its intro copy -- not as a separate
+// "teaser" section pointing at a form rendered again elsewhere (found live
+// during GTM-L2 C3's Replique migration: rendering Section.astro's Cta and
+// a standalone <LeadCaptureForm> both produced a duplicated "Get in touch"
+// heading and a dead-end button).
 import Block from '../Block.astro';
 import CtaLink from '../CtaLink.astro';
+import LeadCaptureForm from '../LeadCaptureForm.astro';
 
-export interface Props { section: any }
-const { section } = Astro.props;
+export interface Props {
+	section: any;
+	leadCapture?: { destination: string; source: string; ventureField: string; honeypotField: string; minSubmitMs?: number };
+	companyLabel?: string;
+}
+const { section, leadCapture, companyLabel } = Astro.props;
 ---
 <section id={section.sectionId} class="py-12 text-center border-t border-ink/10" data-reveal>
 	{section.heading && <h2 class="font-display text-2xl font-bold mb-3">{section.heading}</h2>}
 	{section.subheading && <p class="text-ink/80 max-w-xl mx-auto mb-6">{section.subheading}</p>}
-	{section.blocks?.map((b: any) => <Block block={b} class="mb-4" />)}
-	{section.ctas?.length > 0 && (
-		<div class="flex gap-4 justify-center flex-wrap">
-			{section.ctas.map((c: any, i: number) => <CtaLink cta={c} variant={i === 0 ? 'primary' : 'secondary'} />)}
+	{section.blocks?.map((b: any) => <Block block={b} class="mb-4 max-w-xl mx-auto text-left" />)}
+	{leadCapture ? (
+		<div class="text-left max-w-md mx-auto">
+			<LeadCaptureForm leadCapture={leadCapture} heading="" companyLabel={companyLabel} />
 		</div>
+	) : (
+		section.ctas?.length > 0 && (
+			<div class="flex gap-4 justify-center flex-wrap">
+				{section.ctas.map((c: any, i: number) => <CtaLink cta={c} variant={i === 0 ? 'primary' : 'secondary'} />)}
+			</div>
+		)
 	)}
 </section>

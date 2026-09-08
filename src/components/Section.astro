@@ -1,7 +1,11 @@
 ---
 // Single entry point for rendering a page.sections[] entry: dispatches on
 // sectionKind to the matching sections/*.astro component. A consumer page
-// just does {page.sections.map((s) => <Section section={s} />)}.
+// just does {page.sections.map((s) => <Section section={s} site={site} />)}.
+// site is optional and only actually used by the "cta" kind (to embed the
+// real lead-capture form) -- passed through uniformly so a future
+// sectionKind needing site-level data doesn't require a new prop plumbed
+// through every call site again.
 import Hero from './sections/Hero.astro';
 import Problem from './sections/Problem.astro';
 import Approach from './sections/Approach.astro';
@@ -26,11 +30,19 @@ const SECTION_COMPONENTS: Record<string, any> = {
 	legal: Legal,
 };
 
-export interface Props { section: any }
-const { section } = Astro.props;
+export interface Props {
+	section: any;
+	site?: any;
+	companyLabel?: string;
+}
+const { section, site, companyLabel } = Astro.props;
 const Component = SECTION_COMPONENTS[section.sectionKind];
 if (!Component) {
 	throw new Error(`Section.astro: unknown sectionKind "${section.sectionKind}" (id: ${section.sectionId})`);
 }
 ---
-<Component section={section} />
+{section.sectionKind === 'cta' ? (
+	<Cta section={section} leadCapture={site?.leadCapture} companyLabel={companyLabel} />
+) : (
+	<Component section={section} />
+)}
