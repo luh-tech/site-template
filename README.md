@@ -27,7 +27,11 @@ site with no way to supply one (GTM-L3 G1.4-R, 2026-09-08).
   renders nav from `site.nav`, footer from `site.footer.legalLine` +
   `parentHref`, and `<head>` from `page.seo` (title, description, og:\*,
   twitter:\*). `og:image`'s "must not be a staging host" rule is enforced by
-  the schema itself, not this layout.
+  the schema itself, not this layout. Stamps `<html class="no-js">` and
+  removes it via an inline script before paint (fixed 0.3.0) --
+  `[data-reveal]` sections rely on a `.no-js [data-reveal]{opacity:1}`
+  fallback rule in each consumer's own `global.css` in case the deferred
+  reveal script fails to load; that rule had nothing to key off before this.
 - **`<Section section={s} />`** (`@luhtech/site-template/components/Section.astro`)
   dispatches on `sectionKind` to one component per kind: `Hero`, `Problem`,
   `Approach`, `Proof`, `Audiences`, `Open`, `Status`, `Sources`, `Cta`,
@@ -35,7 +39,28 @@ site with no way to supply one (GTM-L3 G1.4-R, 2026-09-08).
   `blockType` via the shared `Block` component; `figures[]` render with
   `provenance.sourceRef` (in `Sources`); `crossLinks[]` render as name +
   relationshipLine + href -- the one schema-legal way a page names a
-  sibling brand.
+  sibling brand -- **for every `sectionKind`, generically**, not just
+  `open` (fixed 0.3.0: `about.json`/`insights.json`'s `crossLinks` entries
+  on `hero`/`proof` sections were silently invisible before this).
+- **`<SplashHero {...} />`** (`@luhtech/site-template/components/SplashHero.astro`)
+  -- a trigger-flow hero: full-bleed photo, a one-time splash intro on load
+  (wireframe wordmark -> white-fill wave -> fly-out into the real nav logo's
+  on-screen position, measured at play time), then never repeats for that
+  session (`sessionStorage`, keyed by your own `sessionKey` so two on one
+  origin don't collide). Lifted out of Ectropy's own hand-built splash
+  (2026-09-03) into a real, parameterized component: photo, wordmark SVG
+  markup + viewBox, heading/lede/eyebrow/ctas, an optional drifting
+  background data-text layer, and the nav-logo fly-out target selector are
+  all props -- the motion mechanics (timing, reduced-motion handling,
+  fly-out math) are fixed and proven live. `heading`/`lede` are meant to
+  carry the same `brand.identity.tagline`/`oneLiner` values
+  `applyBrandDefaults()` binds onto a standard `Hero` section on `/` -- this
+  is a presentation alternative to `Hero`, not a different binding rule; a
+  consumer still calls `applyBrandDefaults()` and reads the result. Use it
+  in place of `<Section>` for the `hero`-kind section only, rendering the
+  rest of `page.sections` (filtered to exclude that one) through `<Section>`
+  as usual. See `~/dev/luhtech/Ectropy-Business/apps/marketing-site/src/pages/index.astro`
+  for the reference consumer.
 - **`loadBrand(path)`** (`@luhtech/site-template/content`) reads a
   `content/brand/<venture>.json` file and ajv-validates it against the live,
   version-pinned `portfolio/brand-identity.schema.json`. Mirrors

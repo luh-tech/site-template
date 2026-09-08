@@ -32,10 +32,11 @@ const nav =
     ? [...rawNav, HOLDING_NAV_ITEM]
     : rawNav;
 ---
-<html lang="en">
+<html lang="en" class="no-js">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script is:inline>document.documentElement.classList.remove('no-js');</script>
 		<title>{seo.title}</title>
 		<meta name="description" content={seo.description} />
 		{seo.noindex && <meta name="robots" content="noindex, nofollow" />}
