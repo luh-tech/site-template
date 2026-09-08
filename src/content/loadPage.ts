@@ -31,7 +31,58 @@ async function buildValidator() {
   return ajv.compile(pageSchema as object);
 }
 
+export interface PageBlock {
+  blockType: string;
+  text: string;
+  label?: string;
+}
+
+export interface PageClaim {
+  claimId: string;
+  kind: string;
+  text: string;
+  featureRef?: string;
+  sourcedStatus?: string;
+}
+
+export interface PageCta {
+  label: string;
+  href: string;
+  intent: string;
+}
+
+export interface PageCrossLink {
+  brandRef: string;
+  relationshipLine: string;
+  href: string;
+}
+
+export interface PageSection {
+  sectionId: string;
+  sectionKind: string;
+  heading?: string;
+  subheading?: string;
+  eyebrow?: string;
+  blocks?: PageBlock[];
+  claims?: PageClaim[];
+  ctas?: PageCta[];
+  crossLinks?: PageCrossLink[];
+  figures?: unknown[];
+  [key: string]: unknown;
+}
+
+/**
+ * `sections` is typed as a real array (not the bare index signature's
+ * `unknown`) so a consumer's `page.sections.map(...)` typechecks without
+ * a local cast -- found live migrating Ectropy/JobsiteControl/Qullqa/
+ * Siltana to this package: `astro check` failed ts(18046) on every one
+ * of them ("'page.sections' is of type 'unknown'"), each independently
+ * patched with its own `(s: any)` workaround before this fix landed.
+ * Other top-level fields stay on the index signature -- only the one
+ * every consumer actually iterates gets a real type.
+ */
 export interface LoadedPage {
+  sections: PageSection[];
   [key: string]: unknown;
 }
 
