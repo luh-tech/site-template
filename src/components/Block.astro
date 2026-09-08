@@ -1,0 +1,29 @@
+---
+// Renders one page.schema.json block by blockType. "text" is markdown-safe
+// per the schema's own description -- kept as plain text here (no markdown
+// parser dependency); a consumer site that needs real markdown rendering
+// wraps this or replaces it, the contract only requires blockType/text/label.
+export interface Props {
+	block: { blockType: string; text: string; label?: string };
+	class?: string;
+}
+const { block, class: className = '' } = Astro.props;
+const items = block.blockType === 'list' ? block.text.split('\n').filter(Boolean) : [];
+---
+{block.blockType === 'paragraph' && <p class={`leading-relaxed ${className}`}>{block.text}</p>}
+{block.blockType === 'lede' && <p class={`text-lg leading-relaxed ${className}`}>{block.text}</p>}
+{block.blockType === 'pullquote' && (
+	<blockquote class={`border-l-4 border-accent-primary pl-4 italic text-lg ${className}`}>{block.text}</blockquote>
+)}
+{block.blockType === 'definition' && (
+	<div class={className}>
+		{block.label && <dt class="font-semibold">{block.label}</dt>}
+		<dd class="leading-relaxed">{block.text}</dd>
+	</div>
+)}
+{block.blockType === 'caption' && <p class={`text-sm text-ink/60 ${className}`}>{block.text}</p>}
+{block.blockType === 'list' && (
+	<ul class={`list-disc list-inside space-y-1 ${className}`}>
+		{items.map((item) => <li>{item}</li>)}
+	</ul>
+)}

@@ -1,0 +1,18 @@
+---
+import Block from '../Block.astro';
+import CtaLink from '../CtaLink.astro';
+
+export interface Props { section: any }
+const { section } = Astro.props;
+---
+<section id={section.sectionId} class="py-8" data-reveal>
+	{section.eyebrow && <p class="text-sm font-mono uppercase tracking-wide text-accent-primary mb-3">{section.eyebrow}</p>}
+	{section.heading && <h1 class="font-display text-4xl sm:text-5xl font-semibold leading-tight mb-4">{section.heading}</h1>}
+	{section.subheading && <p class="text-lg text-ink/80 max-w-2xl mb-6">{section.subheading}</p>}
+	{section.blocks?.map((b: any) => <Block block={b} class="mb-3" />)}
+	{section.ctas?.length > 0 && (
+		<div class="mt-6 flex gap-4 flex-wrap">
+			{section.ctas.map((c: any, i: number) => <CtaLink cta={c} variant={i === 0 ? 'primary' : 'secondary'} />)}
+		</div>
+	)}
+</section>

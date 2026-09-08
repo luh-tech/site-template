@@ -1,0 +1,36 @@
+---
+// Single entry point for rendering a page.sections[] entry: dispatches on
+// sectionKind to the matching sections/*.astro component. A consumer page
+// just does {page.sections.map((s) => <Section section={s} />)}.
+import Hero from './sections/Hero.astro';
+import Problem from './sections/Problem.astro';
+import Approach from './sections/Approach.astro';
+import Proof from './sections/Proof.astro';
+import Audiences from './sections/Audiences.astro';
+import Open from './sections/Open.astro';
+import Status from './sections/Status.astro';
+import Sources from './sections/Sources.astro';
+import Cta from './sections/Cta.astro';
+import Legal from './sections/Legal.astro';
+
+const SECTION_COMPONENTS: Record<string, any> = {
+	hero: Hero,
+	problem: Problem,
+	approach: Approach,
+	proof: Proof,
+	audiences: Audiences,
+	open: Open,
+	status: Status,
+	sources: Sources,
+	cta: Cta,
+	legal: Legal,
+};
+
+export interface Props { section: any }
+const { section } = Astro.props;
+const Component = SECTION_COMPONENTS[section.sectionKind];
+if (!Component) {
+	throw new Error(`Section.astro: unknown sectionKind "${section.sectionKind}" (id: ${section.sectionId})`);
+}
+---
+<Component section={section} />

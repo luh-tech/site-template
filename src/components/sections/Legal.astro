@@ -1,0 +1,11 @@
+---
+// sectionKind: legal -- footer legal line (in-page legal copy, distinct
+// from site.footer.legalLine which SiteLayout renders separately).
+import Block from '../Block.astro';
+
+export interface Props { section: any }
+const { section } = Astro.props;
+---
+<section id={section.sectionId} class="py-6 text-xs text-ink/50" data-reveal>
+	{section.blocks?.map((b: any) => <Block block={b} />)}
+</section>

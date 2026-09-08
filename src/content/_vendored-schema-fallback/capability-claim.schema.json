@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.luh.tech/content/capability-claim.schema.json",
+  "title": "Capability Claim",
+  "version": "0.2.0",
+  "description": "A statement about what the platform does, carried by any rendered surface. Marked method or built. A claim marked built must resolve to a register entry; one that does not fails CI. Reconciled with content/article.schema.json's older, distinct claim shape (v2.0.0): article's own claims now $ref this schema rather than an embedded, incompatible definition. kind and sourcedStatus are different axes, not restated forms of each other -- kind names WHAT TYPE of statement this is (method: how the system works; built: this exists and runs), sourcedStatus names WHAT MATURITY the referenced feature has reached, per its real register entry. Widening kind's two values down into sourcedStatus's four (or vice versa) would lose a real distinction either schema already depends on, so both fields coexist.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "claimId",
+    "kind",
+    "text"
+  ],
+  "properties": {
+    "claimId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "method",
+        "built"
+      ],
+      "description": "method: this is how the model works. built: this exists and runs today."
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "featureRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^urn:luhtech:[a-z][a-z0-9-]*:feature:[a-z0-9-]+$",
+      "description": "Required when kind is built. The register entry the claim resolves to."
+    },
+    "sourcedStatus": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "operational",
+        "partial",
+        "planned",
+        "concept",
+        null
+      ],
+      "description": "Optional graduated maturity, matching content/article.schema.json's original claim vocabulary. Independent of kind -- a method claim can be sourcedStatus:concept (describes an approach not yet built at all) just as easily as a built claim can be sourcedStatus:partial (exists, not complete). Absent when the claim doesn't need finer graduation than kind alone provides (e.g. a claim mechanically derived from a single roadmap feature's status field, per the pipeline that emits content/deck-record.schema.json instances)."
+    },
+    "observedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "note": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "built"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "featureRef"
+        ],
+        "properties": {
+          "featureRef": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}

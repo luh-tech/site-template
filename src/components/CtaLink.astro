@@ -1,0 +1,17 @@
+---
+// Renders one page.schema.json cta {label, href, intent}. mailto: is
+// rejected by the schema's own href pattern before this ever renders.
+export interface Props {
+	cta: { label: string; href: string; intent: string };
+	variant?: 'primary' | 'secondary';
+}
+const { cta, variant = 'primary' } = Astro.props;
+const classes =
+	variant === 'primary'
+		? 'px-5 py-2.5 rounded-md bg-accent-primary text-canvas font-medium transition-all duration-200 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-secondary focus-visible:rounded'
+		: 'px-5 py-2.5 rounded-md border border-ink/20 text-ink font-medium transition-all duration-200 hover:border-ink/40 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-secondary focus-visible:rounded';
+const isExternal = cta.intent === 'external' || cta.href.startsWith('https://');
+---
+<a href={cta.href} class={classes} target={isExternal ? '_blank' : undefined} rel={isExternal ? 'noopener noreferrer' : undefined}>
+	{cta.label}
+</a>

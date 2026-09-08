@@ -1,0 +1,15 @@
+---
+// sectionKind: status -- the honest stage statement (pre-formation, on
+// hold, design phase). Register rule (BRAND-LANGUAGE-LOCK-2026-09-07):
+// one status section per page, no hedges ("designed to"/"intended to")
+// permitted here -- state the stage once, plainly.
+import Block from '../Block.astro';
+
+export interface Props { section: any }
+const { section } = Astro.props;
+---
+<section id={section.sectionId} class="py-8 border-t border-ink/10" data-reveal>
+	{section.eyebrow && <p class="text-sm font-mono uppercase tracking-wide text-ink/50 mb-2">{section.eyebrow}</p>}
+	{section.heading && <h2 class="font-display text-xl font-bold mb-2">{section.heading}</h2>}
+	{section.blocks?.map((b: any) => <Block block={b} class="text-ink/80" />)}
+</section>
