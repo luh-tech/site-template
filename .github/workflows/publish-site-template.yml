@@ -1,0 +1,46 @@
+name: Publish @luh-tech/site-template
+
+# GTM-L3 G1.4: mirrors Ectropy-Business's publish-ui-package.yml exactly --
+# same trigger shape (tag push), same registry, same scope resolution off
+# github.repository_owner, same built-in GITHUB_TOKEN (no custom secret).
+# That workflow published @luh-tech/ectropy-ui successfully on 2026-08-18;
+# this package is renamed to @luh-tech/site-template (from @luhtech/...) to
+# match that scope, which is what makes this mirror valid.
+
+permissions:
+  contents: read
+
+on:
+  push:
+    tags:
+      - 'site-template-v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@${{ github.repository_owner }}'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-save
+
+      - name: Run tests
+        run: npm test
+
+      - name: Publish @luh-tech/site-template to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
