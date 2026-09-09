@@ -6,6 +6,23 @@
 // is common across the portfolio rather than brand-specific. Copied verbatim
 // from luh-tech/LuhTech-Business's own Icon.astro -- keep this file in sync
 // if the shared set grows.
+//
+// d-2026-09-09-sr-article-venture-routing-content-cells (LuhTech-Business
+// build-out): this one file mixes truly portfolio-generic icons with
+// Ectropy-specific ones. A consumer wiring Section's `icons` prop should
+// only reach for the GENERIC subset unless it is genuinely a construction
+// venture -- reaching for a construction icon on a non-construction site
+// (e.g. LuhTech-Business, the holding/consultancy site) would be exactly
+// the "borrowed Ectropy content" mistake this split exists to prevent.
+//
+// GENERIC (safe for any venture): location-pin, decision-chain, cost-tag,
+// schema-doc, integration-plug, sync-loop, audit-trail, studio-compass,
+// portfolio-grid, code-bracket, team-people, handshake, rocket, data-flow,
+// mail-envelope, message-bubble, external-link, lock.
+//
+// CONSTRUCTION-SPECIFIC (Ectropy and other construction-venture sites
+// only): voxel-grid, field-inspection, hard-hat, building, field-team,
+// zone-map, change-order, crane.
 const ICONS: Record<string, string> = {
 	'voxel-grid': `<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>`,
 	'location-pin': `<path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.25"/>`,
