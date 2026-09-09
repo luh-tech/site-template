@@ -1,0 +1,98 @@
+---
+// d-2026-09-09-sr-page-diagrams-and-tool-schema. Real, client-side
+// computed vector-sum diagram, ported from the real source essay's own
+// live-generated version (vanilla JS, createElementNS, real trig) --
+// kept client-side deliberately rather than flattened to static build-
+// time SVG (unlike RingComparison.astro/DataLineChart.astro), matching
+// the source's own reasoning: this is a genuinely computational diagram
+// (a resultant IS a computation, not just a rendered fact), and the same
+// real trig utility here is the direct basis for the capacity/reserve
+// calculator's own client-side computation (Phase B).
+//
+// Each ray gets an angle (evenly spaced around the circle, so cells at
+// opposing angles genuinely cancel per the source essay's own point) and
+// a magnitude (sum of its real values[] array). The resultant is the
+// real vector sum: Σ magnitude·cos(θ), Σ magnitude·sin(θ) -- never a
+// hardcoded arrow.
+export interface Props {
+	rays: { label: string; values: number[] }[];
+	class?: string;
+	resultantClass?: string;
+}
+const { rays, class: className = 'w-full h-auto', resultantClass = 'text-accent-primary' } = Astro.props;
+const dataId = `vector-sum-${Math.random().toString(36).slice(2, 9)}`;
+---
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+	viewBox="0 0 300 300"
+	class={className}
+	role="img"
+	aria-label={`Vector sum of ${rays.length} rays, showing the resultant direction`}
+	data-vector-sum={dataId}
+>
+	<circle cx="150" cy="150" r="120" fill="none" stroke="currentColor" stroke-opacity="0.12" />
+	<g data-rays></g>
+	<line data-resultant x1="150" y1="150" x2="150" y2="150" class={resultantClass} stroke="currentColor" stroke-width="2.5" marker-end={`url(#${dataId}-arrow)`} />
+	<defs>
+		<marker id={`${dataId}-arrow`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+			<path d="M0,0 L10,5 L0,10 z" class={resultantClass} fill="currentColor" />
+		</marker>
+	</defs>
+</svg>
+<script define:vars={{ dataId, rays }}>
+	{
+		const svg = document.querySelector(`svg[data-vector-sum="${dataId}"]`);
+		if (svg) {
+			const cx = 150;
+			const cy = 150;
+			const maxLen = 110;
+			const raysGroup = svg.querySelector('[data-rays]');
+			const magnitudes = rays.map((r) => r.values.reduce((a, b) => a + b, 0));
+			const maxMag = Math.max(...magnitudes.map(Math.abs), 1);
+
+			let vx = 0;
+			let vy = 0;
+			rays.forEach((ray, i) => {
+				const angle = (2 * Math.PI * i) / rays.length - Math.PI / 2;
+				const magnitude = magnitudes[i];
+				const len = (magnitude / maxMag) * maxLen;
+				const x2 = cx + Math.cos(angle) * len;
+				const y2 = cy + Math.sin(angle) * len;
+				vx += Math.cos(angle) * magnitude;
+				vy += Math.sin(angle) * magnitude;
+
+				const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+				line.setAttribute('x1', String(cx));
+				line.setAttribute('y1', String(cy));
+				line.setAttribute('x2', String(x2));
+				line.setAttribute('y2', String(y2));
+				line.setAttribute('stroke', 'currentColor');
+				line.setAttribute('stroke-opacity', '0.35');
+				line.setAttribute('stroke-width', '1.5');
+				raysGroup?.appendChild(line);
+
+				const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+				label.setAttribute('x', String(cx + Math.cos(angle) * (maxLen + 14)));
+				label.setAttribute('y', String(cy + Math.sin(angle) * (maxLen + 14)));
+				label.setAttribute('text-anchor', 'middle');
+				label.setAttribute('font-family', 'JetBrains Mono, monospace');
+				label.setAttribute('font-size', '9');
+				label.setAttribute('fill', 'currentColor');
+				label.setAttribute('fill-opacity', '0.6');
+				label.textContent = ray.label;
+				raysGroup?.appendChild(label);
+			});
+
+			// Real vector sum, normalized against the sum of magnitudes (not
+			// maxMag) so the resultant length reflects how much cancellation
+			// actually occurred -- the whole point of the source diagram.
+			const sumOfMagnitudes = magnitudes.reduce((a, b) => a + Math.abs(b), 0) || 1;
+			const resultantScale = maxLen / sumOfMagnitudes;
+			const rx2 = cx + vx * resultantScale;
+			const ry2 = cy + vy * resultantScale;
+			const resultant = svg.querySelector('[data-resultant]');
+			resultant?.setAttribute('x2', String(rx2));
+			resultant?.setAttribute('y2', String(ry2));
+		}
+	}
+</script>

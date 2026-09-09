@@ -1,0 +1,52 @@
+---
+// d-2026-09-09-sr-page-diagrams-and-tool-schema. Real, parameterized
+// revenue/cost ring comparison -- one company is two concentric circles
+// (the outer is revenue, the inner is cost; the ring between them is the
+// business, per the real source essay this pattern comes from). Radii
+// are area-proportional (r = k*sqrt(value)), never linear -- a linear
+// radius scale visually exaggerates ratios between companies, which
+// would misrepresent the real numbers passed in. Computed at build time
+// (Astro frontmatter, server-side), matching DiagramVoxelCell.astro's
+// own convention -- no runtime JS needed since the data is fixed at
+// author time, not user-editable (unlike VectorSum.astro's live
+// client-side computation, kept live because the source diagram it
+// ports draws its resultant from a real, generated data array).
+export interface Props {
+	rings: { label: string; revenue: number; cost: number }[];
+	class?: string;
+	highlightClass?: string;
+}
+const { rings, class: className = 'w-full h-auto', highlightClass = 'text-accent-primary' } = Astro.props;
+
+const CELL_W = 180;
+const PAD = 16;
+const MAX_R = (CELL_W - PAD * 2) / 2;
+const maxRevenue = Math.max(...rings.map((r) => r.revenue), 1);
+const scale = MAX_R / Math.sqrt(maxRevenue);
+
+const width = rings.length * CELL_W;
+const height = CELL_W + 40;
+
+const cells = rings.map((r, i) => {
+	const cx = i * CELL_W + CELL_W / 2;
+	const cy = CELL_W / 2 + 20;
+	const revenueR = Math.max(Math.sqrt(r.revenue) * scale, 4);
+	const costR = Math.max(Math.sqrt(r.cost) * scale, 2);
+	return { ...r, cx, cy, revenueR, costR };
+});
+---
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+	viewBox={`0 0 ${width} ${height}`}
+	class={className}
+	role="img"
+	aria-label={`Revenue and cost ring comparison across ${rings.length} companies`}
+>
+	{cells.map((c) => (
+		<g>
+			<circle cx={c.cx} cy={c.cy} r={c.revenueR} fill="currentColor" fill-opacity="0.06" stroke="currentColor" stroke-width="1.5" />
+			<circle cx={c.cx} cy={c.cy} r={c.costR} class={highlightClass} fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.5" />
+			<text x={c.cx} y={c.cy + c.revenueR + 20} text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="currentColor" fill-opacity="0.7">{c.label}</text>
+		</g>
+	))}
+</svg>

@@ -5,10 +5,29 @@
 // site-bridge). Blocks render in sequence exactly as authored -- lede first,
 // then paragraph/pullquote/stat blocks in the article's own order, closing
 // with a `close` block if the source article ended with one.
+// diagrams[]/toolRef added v1.2.0 (d-2026-09-09-sr-page-diagrams-and-
+// tool-schema): rendered after the body blocks, not interleaved within
+// them -- the chunk vocabulary (lede/section/pullquote/stat/close) has
+// no per-block diagram-anchor mechanism yet, so a section's real
+// diagrams appear together as supporting visualization following the
+// prose, honest about where they actually sit today rather than
+// pretending precise inline placement exists.
 import Block from '../Block.astro';
+import Diagram from '../Diagram.astro';
+import ToolCalculator from '../ToolCalculator.astro';
 
-export interface Props { section: any }
-const { section } = Astro.props;
+export interface Props {
+	section: any;
+	// Resolved content/tool.schema.json instance for section.toolRef, when
+	// present -- the page-level caller loads it (loadTool()) and passes it
+	// down, same pattern as site/page themselves being loaded once at the
+	// page level rather than re-resolved per component.
+	tool?: any;
+	toolSubmitEndpoint?: string;
+	route?: string;
+	ventureRef?: string;
+}
+const { section, tool, toolSubmitEndpoint, route, ventureRef } = Astro.props;
 ---
 <section id={section.sectionId} class="py-8" data-reveal>
 	{section.eyebrow && <p class="text-sm font-mono uppercase tracking-wide text-accent-primary mb-3">{section.eyebrow}</p>}
@@ -17,4 +36,14 @@ const { section } = Astro.props;
 	<div class="max-w-2xl space-y-5">
 		{section.blocks?.map((b: any) => <Block block={b} />)}
 	</div>
+	{section.diagrams?.length > 0 && (
+		<div class="max-w-2xl space-y-8 mt-8">
+			{section.diagrams.map((d: any) => <Diagram diagram={d} />)}
+		</div>
+	)}
+	{section.toolRef && tool && toolSubmitEndpoint && (
+		<div class="max-w-2xl">
+			<ToolCalculator tool={tool} submitEndpoint={toolSubmitEndpoint} route={route ?? ''} ventureRef={ventureRef} />
+		</div>
+	)}
 </section>

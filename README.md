@@ -188,6 +188,67 @@ field-inspection, hard-hat, building, field-team, zone-map, change-order,
 crane) reads as borrowed Ectropy content anywhere else. No icons were
 added, removed, or renamed -- documentation only.
 
+## Real diagrams, and a real interactive tool (0.6.0)
+
+`content/page.schema.json` v1.2.0 (d-2026-09-09-sr-page-diagrams-and-tool-schema)
+added an optional `diagrams[]` array to `section` -- a real, discriminated-union
+payload distinct from `figures[]` (one cited stat with provenance, not a
+rendered visual). Three new, generic, real components render it:
+
+- `RingComparison.astro` -- build-time-computed, area-proportional
+  (`r = k*sqrt(value)`, never linear -- linear radii visually exaggerate
+  ratios) concentric revenue/cost rings. `{rings: {label,revenue,cost}[]}`.
+- `VectorSum.astro` -- **client-side** computed (unlike the other two):
+  real trig (`vx += cos(θ)·magnitude`) draws each input ray and the real
+  computed resultant. `{rays: {label,values:number[]}[]}`.
+- `DataLineChart.astro` -- build-time-generated polyline from a real
+  `{x,y}[]` dataset, reusable for any dataset-backed chart.
+
+`Diagram.astro` dispatches a `section.diagrams[]` entry to the right one by
+`diagramType`, mirroring `Block.astro`'s dispatch-by-type convention.
+`sections/Article.astro` renders `diagrams[]` after the body's `blocks[]`,
+not interleaved -- the article chunk vocabulary (lede/section/pullquote/
+stat/close) has no per-block diagram-anchor mechanism yet, an honest v1
+limitation, not a hidden one.
+
+**The interactive tool.** `content/tool.schema.json` (new, v1.1.0) is the
+real contract `article.schema.json`'s `relatedToolRef` has pointed at since
+v4.2.0: typed `inputs[]`/`outputFields[]`, a `computationRef` naming the
+real client-side implementation, and (v1.1.0) an optional `presentation`
+object -- `heroOutputId`, `chart{xLabel,yLabel}`, `methodNotes[]`,
+`sources[]`, `disclosure` -- so a tool renders a hero KPI, a live chart
+drawn from the computation's own returned points, a collapsible method/math
+disclosure, and a cited sources footer, not just a flat output grid. Added
+after reviewing a set of reference example tools (clickable-diagram +
+inspector, KPI grid, chart, method notes, sources) that the flatter v1.0.0
+design undershot; the bespoke clickable-diagram/inspector/scenario-ledger
+layer those examples also use is deliberately out of scope -- genuinely
+bespoke per-tool illustration work, not schema-parametrizable regardless.
+
+`loadTool()` (new, `@luhtech/site-template/content`) reads and ajv-validates
+a `content/tool.schema.json` instance from disk, same convention and error
+handling as `loadPage`/`loadSite`. `ToolCalculator.astro` renders it: real
+inputs, a live-computed result gated behind a contact-capture form, and
+(when the instance's `presentation` block is present) the hero KPI/chart/
+method-notes/sources described above. `<Section>`/`<Article>` gained
+optional `tool`/`toolSubmitEndpoint`/`route`/`ventureRef` passthrough props
+(same shape as `site`'s own passthrough) so a page with a `section.toolRef`
+can load the resolved tool once at the page level and thread it down.
+
+`src/lib/capacity-model.ts` is a faithful, function-for-function TypeScript
+port of a real internal capacity-design/queueing/stochastic-optimization
+model (`optimalPlan()`'s own newsvendor-flavoured search over nameplate
+capacity, evaluated under a 25-node stratified-quantile demand distribution)
+-- ported this way specifically because an earlier draft tool computed
+`capacity = plannedDemand*(1+reserveRatio)` with `reserveRatio` as a raw
+user input, which contradicted the real model (the reserve ratio is an
+*output* of the optimization, never something a user sets directly).
+`test/capacity-model.test.mjs` checks the port against the Python source's
+own printed reference output at several points, not assumed-correct.
+`npm test` runs Node's native TypeScript type-stripping (`--experimental-
+strip-types`) to import `.ts` test subjects directly -- no build step, no
+`ts-node`.
+
 ## Migrating a venture site
 
 A migration is: author `content/site.<venture>.json` + `content/pages/*.json`
