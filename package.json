@@ -1,6 +1,6 @@
 {
   "name": "@luhtech/site-template",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Shared Astro component library + content-instance contract for LuhTech venture marketing sites -- one template renders every site from content/page.schema.json + content/site.schema.json instances.",
   "type": "module",
   "license": "Apache-2.0",

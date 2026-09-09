@@ -144,6 +144,35 @@ venture's own marketing site instead of only dash.luh.tech's bare preview:
   heading-level chunk, so there is nothing real to link to below
   section-level today.
 
+## Sticky side-nav and back-navigation (0.5.0)
+
+Real long-form/multi-section pages (Platform, Open, About-style pages -- not
+splash/hero landing pages, which have nothing worth jumping to) get the same
+sticky-TOC-plus-scrollspy treatment the rest of the industry has converged on
+(Docusaurus, Mintlify, Nextra, VitePress, Astro Starlight all ship a variant
+of this exact pattern; Stripe's own docs use the sibling breadcrumb
+convention for the same reason -- orient the reader inside a long page):
+
+- `TableOfContents.astro` gained real scrollspy: an `IntersectionObserver`
+  (the same convention `SiteLayout`'s own `[data-reveal]` reveal-on-scroll
+  script already uses, not a second one) tracks which linked section is
+  current and stamps `aria-current` on its link. The active link gets a
+  persistent left accent-bar + ink color + medium weight -- not just a hover
+  state. A consumer wires it exactly as before (`<TableOfContents
+  sections={page.sections} />` inside a `sticky` aside); the scrollspy is
+  automatic, and degrades to a plain static jump-list if JS never runs.
+- `BackLink.astro` (new): the canonical "back to X" pattern -- a real
+  chevron icon (inline SVG, not the `&larr;` glyph) with a hover
+  micro-interaction, replacing the bare `<a>&larr; X</a>` markup that had
+  been hand-duplicated per consumer. `<BackLink href="/insights/"
+  label="Insights" />`.
+- Consumer guidance: only wrap a page's sections in the two-column
+  `grid-cols-[1fr_200px]` + sticky-aside layout when it actually has more
+  than one headinged section (`page.sections.filter(s => s.heading).length
+  > 1` -- the same condition `TableOfContents` itself gates on). Reserving
+  an empty 200px rail next to a single-section page is dead space, not
+  navigation.
+
 ## Migrating a venture site
 
 A migration is: author `content/site.<venture>.json` + `content/pages/*.json`

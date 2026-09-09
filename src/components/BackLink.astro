@@ -1,0 +1,32 @@
+---
+// Canonical "back" navigation link -- replaces the bare `&larr; X` text
+// anchor pattern that was hand-duplicated per-consumer (e.g. Ectropy's
+// insights/[slug].astro had it inline, twice, once per content branch).
+// A real chevron (inline SVG, not the &larr; glyph -- consistent stroke
+// weight against the rest of the icon set, and it can carry its own hover
+// motion) plus a label, matching the back-nav language convention used
+// across doc/article surfaces industry-wide (a short, specific "Back to
+// X", not a bare arrow with no destination named).
+export interface Props {
+	href: string;
+	label: string;
+	class?: string;
+}
+const { href, label, class: className = '' } = Astro.props;
+---
+<a
+	href={href}
+	class={`group inline-flex items-center gap-1.5 text-sm font-medium text-accent-primary transition-colors hover:text-ink ${className}`}
+>
+	<svg
+		width="16"
+		height="16"
+		viewBox="0 0 16 16"
+		fill="none"
+		aria-hidden="true"
+		class="shrink-0 transition-transform duration-200 group-hover:-translate-x-0.5"
+	>
+		<path d="M10 12.5 5.5 8l4.5-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+	</svg>
+	<span>{label}</span>
+</a>
