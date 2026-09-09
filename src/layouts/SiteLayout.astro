@@ -86,6 +86,19 @@ const nav =
 			</div>
 		</footer>
 		<script>
+			// Content already on screen at load must never depend on a scroll
+			// event or an async observer callback to become visible -- real
+			// user report (2026-09-09): the insights index's card grid sits
+			// close enough to the fold on common viewport heights that it
+			// read as a genuinely blank page until scrolled, because
+			// IntersectionObserver's own first callback is asynchronous
+			// (next frame/microtask), not synchronous with page paint, and a
+			// slow first frame or a borderline-in-view element could leave
+			// data-reveal's default opacity:0 as the visible, unrevealed
+			// state. Elements already in (or near) the viewport at setup
+			// time reveal immediately, synchronously, no observer round-trip
+			// required; only genuinely below-the-fold elements keep the
+			// scroll-triggered animation.
 			const revealTargets = document.querySelectorAll('[data-reveal]');
 			if ('IntersectionObserver' in window && revealTargets.length) {
 				const observer = new IntersectionObserver(
@@ -99,7 +112,15 @@ const nav =
 					},
 					{ threshold: 0.2, rootMargin: '0px 0px -10% 0px' }
 				);
-				revealTargets.forEach((el) => observer.observe(el));
+				revealTargets.forEach((el) => {
+					const rect = el.getBoundingClientRect();
+					const nearViewport = rect.top < window.innerHeight * 1.1 && rect.bottom > 0;
+					if (nearViewport) {
+						el.classList.add('is-visible');
+					} else {
+						observer.observe(el);
+					}
+				});
 			} else {
 				revealTargets.forEach((el) => el.classList.add('is-visible'));
 			}

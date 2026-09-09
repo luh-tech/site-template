@@ -262,6 +262,27 @@ switches to a red dashed stroke with an explicit "at a loss" label --
 computed from the same real props, not a second data path to keep in
 sync.
 
+## data-reveal: on-screen content never waits on a scroll (0.6.2)
+
+Real user report: a page's `/insights/` index looked genuinely blank on
+first load at common laptop viewport heights. Root cause: `[data-reveal]`
+sections default to `opacity:0` and only reveal once
+`SiteLayout.astro`'s `IntersectionObserver` fires -- but that callback is
+async (next frame, not synchronous with paint), and any section whose top
+sits close to the fold could read as "just never revealed" rather than
+"will reveal in a moment." `fullPage` Playwright screenshots (used during
+this session's own local review) scroll through the whole page and
+mask this exact failure mode -- a real gap in that verification, not
+just the bug itself.
+
+The reveal script now checks each `[data-reveal]` element's real bounding
+rect at setup time: anything already on screen (or within 10% of the
+viewport height below it) reveals immediately, synchronously, no observer
+round-trip. Only genuinely below-the-fold sections keep the scroll-
+triggered fade-in. Same visual result for content that was always meant
+to animate in on scroll; content already visible at load is now
+guaranteed visible at load.
+
 ## Migrating a venture site
 
 A migration is: author `content/site.<venture>.json` + `content/pages/*.json`
