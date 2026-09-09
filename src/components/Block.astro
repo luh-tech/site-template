@@ -12,20 +12,51 @@
 // concluding paragraph, same semantics as paragraph, styled with a top
 // rule to read as the piece's final beat.
 //
-// href (also v1.1.0) makes the whole rendered block a real link -- an
+// diagram/image added v1.3.0 (d-2026-09-09-sr-inline-diagram-image-blocks):
+// diagram is a positioned reference into this same section's own
+// diagrams[] -- a dangling diagramId is a real authoring error, surfaced
+// as a build failure rather than silently skipped (same discipline
+// business-tools' own chunk parser already applies to a stray ::figure).
+// image is the first real mechanism for a photo/asset to appear inline
+// in an article body at all.
+//
+// href (v1.1.0) makes the whole rendered block a real link -- an
 // audiences-section card pointing at a market-specific page, or an
 // article-list entry pointing at that article's own page. Wraps
 // whatever the blockType already renders in an outer <a>, so link
 // behavior is uniform across every blockType without each needing its
-// own href-aware markup.
+// own href-aware markup. An https:// href is always a link leaving this
+// venture's own site (the schema's own href pattern reserves bare "/"
+// and "#" paths for same-site) -- it opens in a new tab and gets a
+// small external-link marker, the "nice links" treatment.
+import Diagram from './Diagram.astro';
+import Icon from './Icon.astro';
+
 export interface Props {
-	block: { blockType: string; text: string; label?: string; href?: string };
+	block: { blockType: string; text?: string; label?: string; href?: string; diagramId?: string; src?: string; alt?: string; caption?: string };
+	// This section's own diagrams[] array, only needed when block.blockType
+	// is "diagram" -- the block is a position, diagrams[] stays the data.
+	diagrams?: { diagramId: string; diagramType: string; caption?: string; data: any }[];
 	class?: string;
 }
-const { block, class: className = '' } = Astro.props;
-const items = block.blockType === 'list' ? block.text.split('\n').filter(Boolean) : [];
+const { block, diagrams = [], class: className = '' } = Astro.props;
+const items = block.blockType === 'list' ? (block.text ?? '').split('\n').filter(Boolean) : [];
+const isExternalLink = typeof block.href === 'string' && block.href.startsWith('https://');
 const Wrapper = block.href ? 'a' : Fragment;
-const wrapperProps = block.href ? { href: block.href, class: 'block no-underline' } : {};
+const wrapperProps = block.href
+	? {
+			href: block.href,
+			class: 'block no-underline hover:underline hover:underline-offset-4 decoration-accent-primary/50 transition-colors',
+			...(isExternalLink ? { target: '_blank', rel: 'noopener noreferrer' } : {}),
+		}
+	: {};
+let resolvedDiagram;
+if (block.blockType === 'diagram') {
+	resolvedDiagram = diagrams.find((d) => d.diagramId === block.diagramId);
+	if (!resolvedDiagram) {
+		throw new Error(`Block references diagramId "${block.diagramId}" not present in this section's diagrams[]`);
+	}
+}
 ---
 <Wrapper {...wrapperProps}>
 {block.blockType === 'paragraph' && (
@@ -58,5 +89,15 @@ const wrapperProps = block.href ? { href: block.href, class: 'block no-underline
 )}
 {block.blockType === 'close' && (
 	<p class={`leading-relaxed border-t border-ink/10 pt-6 ${className}`}>{block.text}</p>
+)}
+{block.blockType === 'diagram' && resolvedDiagram && <Diagram diagram={resolvedDiagram} class={`my-8 ${className}`} />}
+{block.blockType === 'image' && (
+	<figure class={`my-8 ${className}`}>
+		<img src={block.src} alt={block.alt} class="w-full rounded-md" loading="lazy" />
+		{block.caption && <figcaption class="text-sm text-ink/60 mt-2 text-center">{block.caption}</figcaption>}
+	</figure>
+)}
+{isExternalLink && (
+	<Icon name="external-link" class="inline-block w-3.5 h-3.5 ml-1 align-text-top text-accent-primary/70" />
 )}
 </Wrapper>

@@ -3,7 +3,7 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { fetchSchema, fetchSupportSchema } from './schemaFetch.js';
 
-const PAGE_PIN = '1.2.0';
+const PAGE_PIN = '1.3.0';
 const CAPABILITY_CLAIM_PIN = '0.2.0';
 
 let validatorPromise: ReturnType<typeof buildValidator> | null = null;
@@ -33,9 +33,17 @@ async function buildValidator() {
 
 export interface PageBlock {
   blockType: string;
-  text: string;
+  // Required for the text kinds (paragraph/lede/pullquote/list/definition/
+  // caption/stat/close); not used by diagram/image, same conditional
+  // requirement as the schema's own allOf/if/then -- typed optional here so
+  // a real diagram/image block literal (no text) isn't a type error.
+  text?: string;
   label?: string;
   href?: string;
+  diagramId?: string;
+  src?: string;
+  alt?: string;
+  caption?: string;
 }
 
 export interface PageClaim {

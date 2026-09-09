@@ -1,11 +1,13 @@
 ---
-// ARC-GTM-SURFACE D2.2: shared line-icon grammar (24x24, stroke-based, rounded
-// caps/joins). Registered brand-side as iconSetRef.iconSetId =
-// "gtm-surface-line-icons-v1" -- a shared-set identifier (brand-identity
-// schema's own alternative to a per-brand asset-bank upload), since this set
-// is common across the portfolio rather than brand-specific. Copied verbatim
-// from luh-tech/LuhTech-Business's own Icon.astro -- keep this file in sync
-// if the shared set grows.
+// ARC-GTM-SURFACE D2.2: shared line-icon grammar, backed by @lucide/astro
+// (d-2026-09-09-sr-inline-diagram-image-blocks: replaced 26 hand-drawn inline
+// SVGs with real Lucide components -- one real, maintained icon family behind
+// the portfolio's whole icon surface instead of a hand-rolled set forked
+// verbatim between this repo and LuhTech-Business). Registered brand-side as
+// iconSetRef.iconSetId = "gtm-surface-line-icons-v1" -- a shared-set
+// identifier (brand-identity schema's own alternative to a per-brand
+// asset-bank upload), since this set is common across the portfolio rather
+// than brand-specific.
 //
 // d-2026-09-09-sr-article-venture-routing-content-cells (LuhTech-Business
 // build-out): this one file mixes truly portfolio-generic icons with
@@ -23,33 +25,39 @@
 // CONSTRUCTION-SPECIFIC (Ectropy and other construction-venture sites
 // only): voxel-grid, field-inspection, hard-hat, building, field-team,
 // zone-map, change-order, crane.
-const ICONS: Record<string, string> = {
-	'voxel-grid': `<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>`,
-	'location-pin': `<path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.25"/>`,
-	'decision-chain': `<circle cx="7" cy="7" r="4"/><path d="M5.5 7l1.25 1.25L9.5 5.5"/><circle cx="17" cy="17" r="4"/><path d="M15.5 17l1.25 1.25 2.75-2.75"/><path d="M10.5 9.5l3 3"/>`,
-	'cost-tag': `<path d="M3 12l8.5-8.5a2 2 0 0 1 1.5-.5H19a2 2 0 0 1 2 2v6a2 2 0 0 1-.5 1.5L12 21a2 2 0 0 1-3 0l-6-6a2 2 0 0 1 0-3z"/><circle cx="16" cy="8" r="1.25" fill="currentColor" stroke="none"/>`,
-	'field-inspection': `<rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2.5" width="6" height="3" rx="1"/><path d="M9 12.5l2 2 4-4.5"/><line x1="8" y1="17" x2="16" y2="17"/>`,
-	'schema-doc': `<path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M15 3v4h4"/><path d="M9.5 13l-1.5 1.5 1.5 1.5"/><path d="M14.5 13l1.5 1.5-1.5 1.5"/>`,
-	'integration-plug': `<rect x="3" y="9" width="7" height="6" rx="1.5"/><rect x="14" y="9" width="7" height="6" rx="1.5"/><line x1="10" y1="12" x2="14" y2="12"/><line x1="6" y1="7" x2="6" y2="9"/><line x1="6" y1="15" x2="6" y2="17"/>`,
-	'sync-loop': `<path d="M4 12a8 8 0 0 1 14-5.3L21 9"/><path d="M21 4v5h-5"/><path d="M20 12a8 8 0 0 1-14 5.3L3 15"/><path d="M3 20v-5h5"/>`,
-	'hard-hat': `<path d="M4 16a8 8 0 0 1 16 0"/><rect x="2.5" y="16" width="19" height="3" rx="1.5"/><line x1="12" y1="6" x2="12" y2="8"/>`,
-	'building': `<rect x="5" y="3" width="14" height="18" rx="1"/><circle cx="9" cy="7" r="0.9" fill="currentColor" stroke="none"/><circle cx="15" cy="7" r="0.9" fill="currentColor" stroke="none"/><circle cx="9" cy="11" r="0.9" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="0.9" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="0.9" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="0.9" fill="currentColor" stroke="none"/>`,
-	'field-team': `<circle cx="10" cy="8" r="3.25"/><path d="M4 20.5c0-3.6 2.7-6.2 6-6.2s6 2.6 6 6.2"/><path d="M18.5 4.5a2.5 2.5 0 0 0-2.5 2.5c0 2.1 2.5 4.3 2.5 4.3s2.5-2.2 2.5-4.3a2.5 2.5 0 0 0-2.5-2.5z"/>`,
-	'zone-map': `<rect x="3" y="3" width="18" height="18" rx="1.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><rect x="9.5" y="9.5" width="5" height="5" rx="0.75" fill="currentColor" stroke="none" opacity="0.35"/>`,
-	'audit-trail': `<line x1="5" y1="4" x2="5" y2="20"/><circle cx="5" cy="4" r="1.5" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="5" cy="20" r="1.5" fill="currentColor" stroke="none"/><line x1="10" y1="4" x2="20" y2="4"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="10" y1="20" x2="20" y2="20"/>`,
-	'change-order': `<path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8 14h8"/><path d="M13 11l3 3-3 3"/>`,
-	'studio-compass': `<circle cx="12" cy="12" r="9"/><path d="M12 12l4-7"/><path d="M12 12l-2 8"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/>`,
-	'portfolio-grid': `<circle cx="7" cy="7" r="4"/><circle cx="17" cy="7" r="4"/><circle cx="7" cy="17" r="4"/><circle cx="17" cy="17" r="4"/>`,
-	'code-bracket': `<path d="M8 5L3 12l5 7"/><path d="M16 5l5 7-5 7"/>`,
-	'team-people': `<circle cx="9" cy="8" r="3.25"/><path d="M3.5 20c0-3.6 2.5-6 5.5-6s5.5 2.4 5.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M14.5 20c0-2.8 1.7-5 4-5"/>`,
-	'crane': `<line x1="5" y1="21" x2="5" y2="6"/><line x1="5" y1="6" x2="19" y2="6"/><line x1="16" y1="6" x2="16" y2="3"/><line x1="16" y1="10" x2="19" y2="6"/><line x1="16" y1="10" x2="13" y2="6"/><line x1="16" y1="10" x2="16" y2="15"/><line x1="2" y1="21" x2="9" y2="21"/>`,
-	'handshake': `<path d="M2 11l5-3 3 1.5"/><path d="M22 11l-5-3-3 1.5"/><path d="M10 9.5l2 1.2 2-1.2"/><path d="M7 14.5l2.5 2.5a1.7 1.7 0 0 0 2.4 0"/><path d="M17 14.5l-2.5 2.5a1.7 1.7 0 0 1-2.4 0"/>`,
-	'rocket': `<path d="M12 2c3 2 4.5 5.5 4.5 9.5 0 2-.5 4-1.5 5.5h-6c-1-1.5-1.5-3.5-1.5-5.5C7.5 7.5 9 4 12 2z"/><circle cx="12" cy="10" r="1.5"/><path d="M9 16l-2.5 4.5"/><path d="M15 16l2.5 4.5"/><path d="M10.5 17.5h3l-1.5 3.5z"/>`,
-	'data-flow': `<circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="14" r="2"/><circle cx="5" cy="20" r="2"/><circle cx="19" cy="20" r="2"/><line x1="6.5" y1="7.5" x2="10.5" y2="12.5"/><line x1="17.5" y1="7.5" x2="13.5" y2="12.5"/><line x1="10.5" y1="15.5" x2="6.5" y2="18.5"/><line x1="13.5" y1="15.5" x2="17.5" y2="18.5"/>`,
-	'mail-envelope': `<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5L12 13l8.5-6.5"/>`,
-	'message-bubble': `<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="12.5" x2="14" y2="12.5"/>`,
-	'external-link': `<path d="M7 17L17 7"/><path d="M8 7h9v9"/>`,
-	'lock': `<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/><circle cx="12" cy="16" r="1.25" fill="currentColor" stroke="none"/>`,
+//
+// crane has no literal equivalent in Lucide's real catalog (confirmed
+// against node_modules/@lucide/astro/src/icons -- no crane/tower-crane icon
+// exists); hammer is the closest real, disclosed substitute, not a guess.
+import { icons } from '@lucide/astro';
+
+const ICONS: Record<string, keyof typeof icons> = {
+	'voxel-grid': 'Boxes',
+	'location-pin': 'MapPin',
+	'decision-chain': 'GitBranch',
+	'cost-tag': 'Tag',
+	'field-inspection': 'ClipboardCheck',
+	'schema-doc': 'FileCode',
+	'integration-plug': 'Plug',
+	'sync-loop': 'RefreshCw',
+	'hard-hat': 'HardHat',
+	'building': 'Building2',
+	'field-team': 'Construction',
+	'zone-map': 'Map',
+	'audit-trail': 'ClipboardList',
+	'change-order': 'FilePenLine',
+	'studio-compass': 'Compass',
+	'portfolio-grid': 'LayoutGrid',
+	'code-bracket': 'Code',
+	'team-people': 'Users',
+	'crane': 'Hammer',
+	'handshake': 'Handshake',
+	'rocket': 'Rocket',
+	'data-flow': 'Network',
+	'mail-envelope': 'Mail',
+	'message-bubble': 'MessageCircle',
+	'external-link': 'ExternalLink',
+	'lock': 'Lock',
 };
 
 export interface Props {
@@ -64,17 +72,13 @@ export interface Props {
 	class?: string;
 }
 const { name, class: className = 'w-6 h-6' } = Astro.props;
-const inner = ICONS[name as keyof typeof ICONS] ?? '';
+const lucideName = ICONS[name as keyof typeof ICONS];
+const LucideIcon = lucideName ? icons[lucideName] : null;
 ---
-<svg
-	xmlns="http://www.w3.org/2000/svg"
-	viewBox="0 0 24 24"
-	fill="none"
-	stroke="currentColor"
-	stroke-width="1.75"
-	stroke-linecap="round"
-	stroke-linejoin="round"
-	class={className}
-	aria-hidden="true"
-	set:html={inner}
-/>
+{LucideIcon && (
+	<LucideIcon
+		class={className}
+		stroke-width="1.75"
+		aria-hidden="true"
+	/>
+)}

@@ -283,6 +283,59 @@ triggered fade-in. Same visual result for content that was always meant
 to animate in on scroll; content already visible at load is now
 guaranteed visible at load.
 
+## One real icon family, and diagrams that sit where they're authored (0.7.0)
+
+Two real, related gaps found in live local review, fixed together
+(d-2026-09-09-sr-inline-diagram-image-blocks): a section's `diagrams[]`
+always rendered as one group after every body block, never next to the
+paragraph each one actually illustrates; and `Icon.astro` was 26
+hand-drawn inline SVGs, forked verbatim into LuhTech-Business as its own
+duplicate copy, with only 2 of 11 `sectionKind` components wiring icon
+support in at all.
+
+**`content/page.schema.json` v1.3.0** (additive) gives `block` two new
+`blockType` values: `diagram` (required `diagramId`, resolved against
+this same section's own `diagrams[]` -- the block is a position, `diagrams[]`
+stays the data) and `image` (required `src`+`alt`, optional `caption` --
+the first real mechanism for a photo to appear inline in an article body
+at all). Existing instances validate unchanged; `PAGE_PIN` bumped to
+`1.3.0`.
+
+**`Block.astro`** renders both: `diagram` dispatches to `Diagram.astro`
+after resolving `diagramId` against a new `diagrams` prop -- a dangling
+id throws at build time rather than silently rendering nothing, the same
+"raised loudly, never silently dropped" discipline business-tools' own
+chunk parser already applies to a stray `::figure`. `image` renders a
+real `<figure>`/`<img>`/`<figcaption>`. `sections/Article.astro` no
+longer renders `diagrams[]` as one trailing block after the prose --
+every block (including `diagram`) renders in a single ordered pass, and
+any diagram genuinely *not* referenced by a block still renders in a
+fallback strip at the end, so authored data is never silently dropped.
+The `href`-wrap mechanism `Block.astro` already had gets real link
+styling: hover underline-offset, and an `https://` href (always a link
+leaving this venture's own site, per the schema's own href pattern)
+opens in a new tab with a small external-link marker.
+
+**`Icon.astro`** is now a thin wrapper over `@lucide/astro` (new
+dependency, ~1,800 real maintained icons, ISC, official Astro package)
+instead of a hand-rolled `Record<string,string>` of raw SVG path data.
+All 26 existing keys map to their real, confirmed Lucide equivalents
+(verified against the installed package's own icon files, not guessed);
+`crane` has no literal match in Lucide's catalog, so `hammer` is used as
+a disclosed, closest-real substitute. The public `name: string` prop
+contract is unchanged -- an unknown name still renders nothing rather
+than failing the build. `sections/Proof.astro` (the one `sectionKind`
+that visibly wanted a heading icon and had none wired) now reads
+`icons.section[section.sectionId]`, same convention `Open.astro` already
+used.
+
+A `tsconfig.json` was added (this repo had none) extending
+`astro/tsconfigs/base` -- required so TypeScript can resolve
+`@lucide/astro`'s extensionless, `.ts`-native exports via `moduleResolution:
+"Bundler"`; incidentally also cleared 24 pre-existing implicit-`any`
+diagnostics across `ToolCalculator.astro` and the diagram components that
+the repo's prior no-tsconfig default resolution wasn't catching.
+
 ## Migrating a venture site
 
 A migration is: author `content/site.<venture>.json` + `content/pages/*.json`
