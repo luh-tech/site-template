@@ -3,7 +3,7 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { fetchSchema, fetchSupportSchema } from './schemaFetch.js';
 
-const PAGE_PIN = '1.1.0';
+const PAGE_PIN = '1.2.0';
 const CAPABILITY_CLAIM_PIN = '0.2.0';
 
 let validatorPromise: ReturnType<typeof buildValidator> | null = null;
@@ -58,6 +58,13 @@ export interface PageCrossLink {
   href: string;
 }
 
+export interface PageDiagram {
+  diagramId: string;
+  diagramType: string;
+  caption?: string;
+  data: unknown;
+}
+
 export interface PageSection {
   sectionId: string;
   sectionKind: string;
@@ -69,6 +76,8 @@ export interface PageSection {
   ctas?: PageCta[];
   crossLinks?: PageCrossLink[];
   figures?: unknown[];
+  diagrams?: PageDiagram[];
+  toolRef?: string;
   [key: string]: unknown;
 }
 

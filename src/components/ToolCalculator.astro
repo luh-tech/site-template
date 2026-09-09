@@ -1,0 +1,301 @@
+---
+// d-2026-09-09-sr-tool-schema-presentation-block. Real, client-side
+// interactive tool: renders a content/tool.schema.json instance's real
+// inputs[], computes its real output via a small client-side computation
+// registry keyed by the tool's own computationRef (the schema carries the
+// contract, this file carries one real implementation per registered
+// computationRef -- same separation the schema's own description states),
+// then gates the full result behind a real contact-capture form that
+// POSTs to the real submission endpoint.
+//
+// v2 (supersedes the earlier flat-KPI-grid-only version before it ever
+// shipped): renders the schema's optional presentation block -- a hero
+// KPI, a live chart drawn from the computation's own returned points, a
+// collapsible method/math disclosure, a cited sources footer, and a
+// plain-language disclosure caption. Found necessary by reviewing a set
+// of reference example tools (clickable-diagram+inspector, KPI grid,
+// chart, method-notes, sources) against the earlier, flatter design,
+// which undershot that bar.
+//
+// computationRef 'prefab-capacity-optimal-plan-v1' is a faithful port
+// (src/lib/capacity-model.ts) of prefab_capacity_certainty_model.py, a
+// real capacity-design/queueing/stochastic-optimization model -- NOT a
+// hand-picked closed-form formula. An earlier draft of this tool computed
+// capacity = plannedDemand*(1+reserveRatio) with reserveRatio as a raw
+// user input; that contradicted the real model, where the reserve ratio
+// is an OUTPUT of optimalPlan()'s search, never something a user dials in.
+export interface ToolField {
+	id: string;
+	label: string;
+	type: 'number' | 'currency-usd' | 'percent' | 'integer' | 'string';
+	unit?: string;
+	min?: number;
+	max?: number;
+	helpText?: string;
+}
+export interface ToolMethodNote {
+	tag: string;
+	title: string;
+	formula?: string;
+	body: string;
+}
+export interface ToolSource {
+	label: string;
+	href: string;
+}
+export interface ToolPresentation {
+	heroOutputId?: string;
+	disclosure?: string;
+	chart?: { xLabel: string; yLabel: string; caption?: string };
+	methodNotes?: ToolMethodNote[];
+	sources?: ToolSource[];
+}
+export interface Tool {
+	toolId: string;
+	title: string;
+	description?: string;
+	computationRef: string;
+	inputs: ToolField[];
+	outputFields: ToolField[];
+	presentation?: ToolPresentation;
+}
+export interface Props {
+	tool: Tool;
+	submitEndpoint: string;
+	route: string;
+	ventureRef?: string;
+	class?: string;
+}
+const { tool, submitEndpoint, route, ventureRef, class: className = 'my-8' } = Astro.props;
+const dataId = `tool-${tool.toolId}`;
+const pres = tool.presentation ?? {};
+const heroField = pres.heroOutputId ? tool.outputFields.find((f) => f.id === pres.heroOutputId) : undefined;
+const restFields = tool.outputFields.filter((f) => f.id !== pres.heroOutputId);
+---
+<div
+	class={`rounded-lg border border-ink/15 bg-ink/[0.02] p-6 sm:p-8 ${className}`}
+	data-tool={dataId}
+	data-tool-id={tool.toolId}
+	data-computation-ref={tool.computationRef}
+	data-submit-endpoint={submitEndpoint}
+	data-route={route}
+	data-venture-ref={ventureRef ?? ''}
+>
+	<p class="font-display font-semibold text-lg mb-1">{tool.title}</p>
+	{tool.description && <p class="text-sm text-ink/70 mb-6">{tool.description}</p>}
+
+	<div class="grid sm:grid-cols-2 gap-4" data-tool-inputs>
+		{tool.inputs.map((f) => (
+			<label class="block">
+				<span class="text-xs font-mono uppercase tracking-wide text-ink/50">{f.label}{f.unit ? ` (${f.unit})` : ''}</span>
+				<input
+					type="number"
+					data-field={f.id}
+					min={f.min}
+					max={f.max}
+					step={f.type === 'percent' ? '0.01' : '1'}
+					class="mt-1 w-full rounded-md border border-ink/20 px-3 py-2 text-sm bg-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary"
+				/>
+				{f.helpText && <span class="block text-xs text-ink/50 mt-1">{f.helpText}</span>}
+			</label>
+		))}
+	</div>
+
+	<div class="mt-6" data-tool-results hidden>
+		{heroField && (
+			<div class="rounded-md bg-accent-primary/10 border border-accent-primary/30 px-5 py-4 mb-4">
+				<p class="text-xs font-mono uppercase tracking-wide text-accent-primary/80">{heroField.label}</p>
+				<p class="font-display text-3xl font-bold text-accent-primary mt-1" data-output={heroField.id}>—</p>
+			</div>
+		)}
+		{restFields.length > 0 && (
+			<div class="grid sm:grid-cols-3 gap-4">
+				{restFields.map((f) => (
+					<div class="rounded-md bg-ink/[0.03] px-4 py-3">
+						<p class="text-xs font-mono uppercase tracking-wide text-ink/50">{f.label}</p>
+						<p class="font-display text-xl font-semibold text-ink mt-1" data-output={f.id}>—</p>
+					</div>
+				))}
+			</div>
+		)}
+		{pres.disclosure && <p class="text-xs text-ink/50 mt-3 italic">{pres.disclosure}</p>}
+
+		{pres.chart && (
+			<div class="mt-6 border-t border-ink/10 pt-6">
+				<p class="text-sm font-medium mb-2">{pres.chart.caption ?? `${pres.chart.yLabel} vs. ${pres.chart.xLabel}`}</p>
+				<svg data-tool-chart viewBox="0 0 640 280" class="w-full h-auto" role="img" aria-label={`${pres.chart.yLabel} vs ${pres.chart.xLabel}`}></svg>
+				<div class="flex justify-between text-[10px] font-mono text-ink/50 mt-1">
+					<span>{pres.chart.xLabel}</span>
+					<span>{pres.chart.yLabel}</span>
+				</div>
+			</div>
+		)}
+
+		{pres.methodNotes && pres.methodNotes.length > 0 && (
+			<details class="mt-6 border-t border-ink/10 pt-4">
+				<summary class="text-sm font-medium cursor-pointer">What this tool is computing</summary>
+				<div class="mt-3 space-y-3">
+					{pres.methodNotes.map((n) => (
+						<div class="rounded-md bg-ink/[0.03] px-4 py-3">
+							<p class="text-xs font-mono uppercase tracking-wide text-ink/50">{n.tag} · {n.title}</p>
+							{n.formula && <p class="font-mono text-xs text-ink mt-1.5 overflow-x-auto">{n.formula}</p>}
+							<p class="text-sm text-ink/70 mt-1.5">{n.body}</p>
+						</div>
+					))}
+				</div>
+			</details>
+		)}
+	</div>
+
+	<div class="mt-6 border-t border-ink/10 pt-6" data-tool-capture hidden>
+		<p class="text-sm font-medium mb-3">Get the full result emailed to you</p>
+		<div class="grid sm:grid-cols-2 gap-3">
+			<input type="text" data-contact="firstName" placeholder="First name" class="rounded-md border border-ink/20 px-3 py-2 text-sm bg-canvas" />
+			<input type="text" data-contact="lastName" placeholder="Last name" class="rounded-md border border-ink/20 px-3 py-2 text-sm bg-canvas" />
+			<input type="email" data-contact="email" placeholder="Work email" class="rounded-md border border-ink/20 px-3 py-2 text-sm bg-canvas" required />
+			<input type="text" data-contact="company" placeholder="Company" class="rounded-md border border-ink/20 px-3 py-2 text-sm bg-canvas" />
+		</div>
+		<button type="button" data-tool-submit class="mt-4 px-5 py-2.5 rounded-md bg-accent-primary text-canvas font-medium text-sm transition-all hover:opacity-90">
+			Email me the result
+		</button>
+		<p class="text-xs text-ink/50 mt-3" data-tool-status></p>
+	</div>
+
+	{pres.sources && pres.sources.length > 0 && (
+		<div class="mt-6 border-t border-ink/10 pt-4 text-xs text-ink/50 font-mono">
+			Sources: {pres.sources.map((s, i) => (
+				<>
+					<a href={s.href} class="underline hover:text-ink/80">{s.label}</a>
+					{i < pres.sources!.length - 1 ? ' · ' : ''}
+				</>
+			))}
+		</div>
+	)}
+</div>
+
+<script>
+	import { optimalPlan } from '../lib/capacity-model';
+
+	interface ComputeResult {
+		outputs: Record<string, number>;
+		chart?: { points: { x: number; y: number }[] };
+	}
+
+	// Real computation registry, keyed by computationRef -- the schema
+	// carries the contract (tool.schema.json), this is the one real
+	// implementation registered under 'prefab-capacity-optimal-plan-v1',
+	// a faithful port of prefab_capacity_certainty_model.py's optimalPlan()
+	// (src/lib/capacity-model.ts), not a hand-picked formula.
+	const COMPUTATIONS: Record<string, (inputs: Record<string, string>) => ComputeResult> = {
+		'prefab-capacity-optimal-plan-v1': (inputs) => {
+			const Dtrue = Number(inputs.annualDemand) || 0;
+			const theta = (Number(inputs.contractedShare) || 0) / 100;
+			const { best, curve } = optimalPlan(Dtrue, theta);
+			return {
+				outputs: {
+					optimalNameplate: Math.round(best.D),
+					expectedMargin: best.Em,
+					serviceLevel: best.Sv * 100,
+				},
+				chart: { points: curve.map(([D, Em]) => ({ x: D, y: Em })) },
+			};
+		},
+	};
+
+	function drawChart(svg: SVGSVGElement, points: { x: number; y: number }[]) {
+		const W = 640, H = 280, PAD_L = 56, PAD_R = 16, PAD_T = 16, PAD_B = 20;
+		const plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+		const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
+		const minX = Math.min(...xs), maxX = Math.max(...xs);
+		const minY = Math.min(...ys), maxY = Math.max(...ys);
+		const xRange = maxX - minX || 1, yRange = maxY - minY || 1;
+		const sx = (x: number) => PAD_L + ((x - minX) / xRange) * plotW;
+		const sy = (y: number) => PAD_T + plotH - ((y - minY) / yRange) * plotH;
+
+		const NS = 'http://www.w3.org/2000/svg';
+		svg.innerHTML = '';
+		const axisX = document.createElementNS(NS, 'line');
+		axisX.setAttribute('x1', String(PAD_L)); axisX.setAttribute('y1', String(PAD_T + plotH));
+		axisX.setAttribute('x2', String(PAD_L + plotW)); axisX.setAttribute('y2', String(PAD_T + plotH));
+		axisX.setAttribute('stroke', 'currentColor'); axisX.setAttribute('stroke-opacity', '0.2');
+		svg.appendChild(axisX);
+		const axisY = document.createElementNS(NS, 'line');
+		axisY.setAttribute('x1', String(PAD_L)); axisY.setAttribute('y1', String(PAD_T));
+		axisY.setAttribute('x2', String(PAD_L)); axisY.setAttribute('y2', String(PAD_T + plotH));
+		axisY.setAttribute('stroke', 'currentColor'); axisY.setAttribute('stroke-opacity', '0.2');
+		svg.appendChild(axisY);
+
+		const poly = document.createElementNS(NS, 'polyline');
+		poly.setAttribute('points', points.map((p) => `${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' '));
+		poly.setAttribute('fill', 'none');
+		poly.setAttribute('stroke', 'currentColor');
+		poly.setAttribute('class', 'text-accent-primary');
+		poly.setAttribute('stroke-width', '1.75');
+		svg.appendChild(poly);
+
+		// mark the best (max-y) point -- the real optimum the tool selected
+		const bestPoint = points.reduce((a, b) => (b.y > a.y ? b : a), points[0]);
+		const dot = document.createElementNS(NS, 'circle');
+		dot.setAttribute('cx', String(sx(bestPoint.x))); dot.setAttribute('cy', String(sy(bestPoint.y)));
+		dot.setAttribute('r', '4'); dot.setAttribute('fill', 'currentColor'); dot.setAttribute('class', 'text-accent-primary');
+		svg.appendChild(dot);
+	}
+
+	document.querySelectorAll<HTMLElement>('[data-tool]').forEach((root) => {
+		const computationRef = root.dataset.computationRef ?? '';
+		const toolId = root.dataset.toolId ?? '';
+		const submitEndpoint = root.dataset.submitEndpoint ?? '';
+		const route = root.dataset.route ?? '';
+		const ventureRef = root.dataset.ventureRef || undefined;
+		const compute = COMPUTATIONS[computationRef];
+		if (!compute) return;
+
+		const inputEls = Array.from(root.querySelectorAll<HTMLInputElement>('[data-field]'));
+		const resultsEl = root.querySelector<HTMLElement>('[data-tool-results]');
+		const captureEl = root.querySelector<HTMLElement>('[data-tool-capture]');
+		const statusEl = root.querySelector<HTMLElement>('[data-tool-status]');
+		const chartSvg = root.querySelector<SVGSVGElement>('[data-tool-chart]');
+		let lastOutput: Record<string, number> | null = null;
+
+		const recompute = () => {
+			if (inputEls.some((el) => el.value === '')) return;
+			const inputs: Record<string, string> = {};
+			inputEls.forEach((el) => { inputs[el.dataset.field as string] = el.value; });
+			const result = compute(inputs);
+			lastOutput = result.outputs;
+			Object.entries(result.outputs).forEach(([key, value]) => {
+				const out = root.querySelector(`[data-output="${key}"]`);
+				if (out) out.textContent = typeof value === 'number' ? value.toLocaleString(undefined, { maximumFractionDigits: 1 }) : String(value);
+			});
+			if (chartSvg && result.chart) drawChart(chartSvg, result.chart.points);
+			resultsEl?.removeAttribute('hidden');
+			captureEl?.removeAttribute('hidden');
+		};
+		inputEls.forEach((el) => el.addEventListener('input', recompute));
+
+		const submitBtn = root.querySelector('[data-tool-submit]');
+		submitBtn?.addEventListener('click', async () => {
+			if (!lastOutput) return;
+			const contact: Record<string, string> = {};
+			root.querySelectorAll<HTMLInputElement>('[data-contact]').forEach((el) => { contact[el.dataset.contact as string] = el.value; });
+			if (!contact.email) {
+				if (statusEl) statusEl.textContent = 'A work email is required.';
+				return;
+			}
+			const inputs: Record<string, number> = {};
+			inputEls.forEach((el) => { inputs[el.dataset.field as string] = Number(el.value); });
+			if (statusEl) statusEl.textContent = 'Sending...';
+			try {
+				const res = await fetch(submitEndpoint, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ toolId, route, ventureRef, inputs, output: lastOutput, contact }),
+				});
+				if (!res.ok) throw new Error(`status ${res.status}`);
+				if (statusEl) statusEl.textContent = 'Sent -- check your inbox.';
+			} catch {
+				if (statusEl) statusEl.textContent = 'Something went wrong -- try again in a moment.';
+			}
+		});
+	});
+</script>

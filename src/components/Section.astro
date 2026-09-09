@@ -53,8 +53,17 @@ export interface Props {
 	site?: any;
 	companyLabel?: string;
 	icons?: SectionIcons;
+	// Passed through uniformly to whichever component actually looks at
+	// them -- today only sectionKind:"article" (Article.astro) reads these,
+	// for a real toolRef section rendering its resolved tool instance
+	// (loaded once by the page caller via loadTool(), same pattern as
+	// site/page themselves), same passthrough shape as `site` above.
+	tool?: any;
+	toolSubmitEndpoint?: string;
+	route?: string;
+	ventureRef?: string;
 }
-const { section, site, companyLabel, icons } = Astro.props;
+const { section, site, companyLabel, icons, tool, toolSubmitEndpoint, route, ventureRef } = Astro.props;
 const Component = SECTION_COMPONENTS[section.sectionKind];
 if (!Component) {
 	throw new Error(`Section.astro: unknown sectionKind "${section.sectionKind}" (id: ${section.sectionId})`);
@@ -62,6 +71,8 @@ if (!Component) {
 ---
 {section.sectionKind === 'cta' ? (
 	<Cta section={section} leadCapture={site?.leadCapture} companyLabel={companyLabel} />
+) : section.sectionKind === 'article' ? (
+	<Component section={section} icons={icons} tool={tool} toolSubmitEndpoint={toolSubmitEndpoint} route={route} ventureRef={ventureRef} />
 ) : (
 	<Component section={section} icons={icons} />
 )}

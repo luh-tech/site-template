@@ -1,0 +1,23 @@
+---
+// d-2026-09-09-sr-page-diagrams-and-tool-schema. Dispatches one
+// page.schema.json section.diagrams[] entry to its real rendering
+// component by diagramType -- same dispatch convention Block.astro
+// already uses for blockType.
+import RingComparison from './diagrams/RingComparison.astro';
+import VectorSum from './diagrams/VectorSum.astro';
+import DataLineChart from './diagrams/DataLineChart.astro';
+
+export interface Props {
+	diagram: { diagramId: string; diagramType: string; caption?: string; data: any };
+	class?: string;
+}
+const { diagram, class: className = 'my-8' } = Astro.props;
+---
+<figure class={className}>
+	{diagram.diagramType === 'ring-comparison' && <RingComparison rings={diagram.data.rings} />}
+	{diagram.diagramType === 'vector-sum' && <VectorSum rays={diagram.data.rays} />}
+	{diagram.diagramType === 'data-line-chart' && (
+		<DataLineChart points={diagram.data.points} xLabel={diagram.data.xLabel} yLabel={diagram.data.yLabel} annotations={diagram.data.annotations} />
+	)}
+	{diagram.caption && <figcaption class="text-sm text-ink/60 mt-2 text-center">{diagram.caption}</figcaption>}
+</figure>
