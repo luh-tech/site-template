@@ -249,6 +249,19 @@ own printed reference output at several points, not assumed-correct.
 strip-types`) to import `.ts` test subjects directly -- no build step, no
 `ts-node`.
 
+## RingComparison: a loss reads at a glance (0.6.1)
+
+Found in real local review (LuhTech-Business's "The Shape of a Strategy",
+the real three-company example where C's cost genuinely exceeds its
+revenue): the component computed correct, area-proportional radii from
+day one, but with no dollar labels and no color distinction, a real loss
+case was easy to miss at a glance -- exactly the finding the source essay
+exists to make legible. `RingComparison.astro` now renders each ring's
+real revenue/cost values as text, and a ring where `cost > revenue`
+switches to a red dashed stroke with an explicit "at a loss" label --
+computed from the same real props, not a second data path to keep in
+sync.
+
 ## Migrating a venture site
 
 A migration is: author `content/site.<venture>.json` + `content/pages/*.json`
