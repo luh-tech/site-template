@@ -1,0 +1,20 @@
+---
+// sectionKind: article -- a long-form article body bridged from
+// content/article.schema.json's canonical body via the article-venture-site
+// channel-render (page.schema.json v1.1.0, d-2026-09-08-sr-article-venture-
+// site-bridge). Blocks render in sequence exactly as authored -- lede first,
+// then paragraph/pullquote/stat blocks in the article's own order, closing
+// with a `close` block if the source article ended with one.
+import Block from '../Block.astro';
+
+export interface Props { section: any }
+const { section } = Astro.props;
+---
+<section id={section.sectionId} class="py-8" data-reveal>
+	{section.eyebrow && <p class="text-sm font-mono uppercase tracking-wide text-accent-primary mb-3">{section.eyebrow}</p>}
+	{section.heading && <h1 class="font-display text-3xl sm:text-4xl font-bold mb-3 max-w-2xl">{section.heading}</h1>}
+	{section.subheading && <p class="text-lg text-ink/80 max-w-2xl mb-6">{section.subheading}</p>}
+	<div class="max-w-2xl space-y-5">
+		{section.blocks?.map((b: any) => <Block block={b} />)}
+	</div>
+</section>

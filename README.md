@@ -116,6 +116,34 @@ the real schema-registry source, not fabricated) only for this one schema,
 and logs a warning when it does. Every other schema fetch failure is a hard
 error.
 
+## Article sections, table of contents, linkable blocks
+
+Added in 0.4.0 (d-2026-09-08-sr-article-venture-site-bridge), the schema-first
+foundation for bridging business-tools' real article pipeline into a
+venture's own marketing site instead of only dash.luh.tech's bare preview:
+
+- `sectionKind: "article"` (`sections/Article.astro`) renders a long-form
+  article body -- a real, distinct kind from `proof`/`approach`/etc., since
+  none of the existing ten fit an article's own reading experience.
+- `block.blockType` gained `stat` (a styled illustrative/rhetorical
+  callout -- never a citable fact; a real sourced number is always a
+  section-level `figures[]` entry) and `close` (a marked concluding
+  paragraph, styled with a top rule).
+- `block.href` (optional, same shape as `cta.href`) makes any individual
+  block a real link -- an `audiences` card pointing at a market-specific
+  page, or a `list`/`definition` entry pointing at an article's own page.
+  `Block.astro` wraps whatever the blockType already renders in an outer
+  `<a>`, so link behavior is uniform across every blockType.
+- `TableOfContents.astro` (new, generic component): derives a real jump-list
+  from `page.sections[].heading`, linking each entry to that section's own
+  `id={section.sectionId}` (every `sections/*.astro` component already
+  stamps this). Renders nothing for a page with 0-1 headinged sections --
+  a one-entry TOC is noise, not navigation. Does not attempt to derive
+  sub-headings from inside a single article section's `blocks[]` -- the
+  article chunk vocabulary (lede/section/pullquote/stat/close) has no
+  heading-level chunk, so there is nothing real to link to below
+  section-level today.
+
 ## Migrating a venture site
 
 A migration is: author `content/site.<venture>.json` + `content/pages/*.json`
