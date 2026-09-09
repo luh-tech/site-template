@@ -3,13 +3,31 @@
 // per the schema's own description -- kept as plain text here (no markdown
 // parser dependency); a consumer site that needs real markdown rendering
 // wraps this or replaces it, the contract only requires blockType/text/label.
+//
+// stat/close added in page.schema.json v1.1.0 (d-2026-09-08-sr-article-
+// venture-site-bridge): stat is a styled illustrative/rhetorical callout
+// the piece itself asserts -- never a citable fact (a real sourced number
+// is always a section-level figures[] entry, which carries required
+// public provenance; this block carries none). close is a marked
+// concluding paragraph, same semantics as paragraph, styled with a top
+// rule to read as the piece's final beat.
+//
+// href (also v1.1.0) makes the whole rendered block a real link -- an
+// audiences-section card pointing at a market-specific page, or an
+// article-list entry pointing at that article's own page. Wraps
+// whatever the blockType already renders in an outer <a>, so link
+// behavior is uniform across every blockType without each needing its
+// own href-aware markup.
 export interface Props {
-	block: { blockType: string; text: string; label?: string };
+	block: { blockType: string; text: string; label?: string; href?: string };
 	class?: string;
 }
 const { block, class: className = '' } = Astro.props;
 const items = block.blockType === 'list' ? block.text.split('\n').filter(Boolean) : [];
+const Wrapper = block.href ? 'a' : Fragment;
+const wrapperProps = block.href ? { href: block.href, class: 'block no-underline' } : {};
 ---
+<Wrapper {...wrapperProps}>
 {block.blockType === 'paragraph' && (
 	<div class={className}>
 		{block.label && <p class="font-display font-semibold text-accent-secondary mb-1">{block.label}</p>}
@@ -35,3 +53,10 @@ const items = block.blockType === 'list' ? block.text.split('\n').filter(Boolean
 		</ul>
 	</div>
 )}
+{block.blockType === 'stat' && (
+	<p class={`font-display text-xl font-semibold text-accent-primary bg-accent-primary/5 rounded-md px-4 py-3 ${className}`}>{block.text}</p>
+)}
+{block.blockType === 'close' && (
+	<p class={`leading-relaxed border-t border-ink/10 pt-6 ${className}`}>{block.text}</p>
+)}
+</Wrapper>

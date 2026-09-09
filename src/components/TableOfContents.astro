@@ -1,0 +1,37 @@
+---
+// Generic, page-level table of contents -- not article-specific. Derived
+// directly from page.sections[].heading (the same real field every
+// sections/*.astro component already renders as its own <h1>/<h2> and
+// stamps as its section's DOM id via id={section.sectionId}), so a TOC
+// entry always points at a real, already-rendered anchor -- never a
+// fabricated one.
+//
+// Deliberately does not attempt to derive sub-headings from inside a
+// single section's blocks[] -- content/article.schema.json's body has no
+// heading-level chunk type (its chunk vocabulary is lede/section/pullquote/
+// stat/close, none of which mark a subheading), so a real article today
+// has nothing below section-level to link to. A consumer with genuinely
+// multi-section content (e.g. an article split into several `article`
+// sections, each with its own heading) gets a real, useful jump-list for
+// free; a single-section page simply renders nothing here.
+export interface Props {
+	sections: Array<{ sectionId: string; heading?: string }>;
+	class?: string;
+}
+const { sections, class: className = '' } = Astro.props;
+const entries = (sections ?? []).filter((s) => s.heading);
+---
+{entries.length > 1 && (
+	<nav class={`text-sm ${className}`} aria-label="Table of contents">
+		<p class="font-display font-semibold uppercase tracking-wide text-xs text-ink/50 mb-2">On this page</p>
+		<ul class="space-y-1.5 border-l border-ink/10">
+			{entries.map((s) => (
+				<li>
+					<a href={`#${s.sectionId}`} class="block pl-3 -ml-px border-l-2 border-transparent text-ink/70 hover:text-ink hover:border-accent-primary transition-colors">
+						{s.heading}
+					</a>
+				</li>
+			))}
+		</ul>
+	</nav>
+)}
