@@ -6,12 +6,15 @@
 // then paragraph/pullquote/stat blocks in the article's own order, closing
 // with a `close` block if the source article ended with one.
 // diagrams[]/toolRef added v1.2.0 (d-2026-09-09-sr-page-diagrams-and-
-// tool-schema): rendered after the body blocks, not interleaved within
-// them -- the chunk vocabulary (lede/section/pullquote/stat/close) has
-// no per-block diagram-anchor mechanism yet, so a section's real
-// diagrams appear together as supporting visualization following the
-// prose, honest about where they actually sit today rather than
-// pretending precise inline placement exists.
+// tool-schema).
+//
+// v1.3.0 (d-2026-09-09-sr-inline-diagram-image-blocks): a section's
+// diagrams now render inline, exactly where a `diagram` block places
+// them, in this same single-pass blocks loop -- fixing the real gap
+// where every diagram rendered as one group after all the prose,
+// disconnected from the paragraph it illustrates. Any diagram in
+// section.diagrams[] NOT referenced by a block still renders in the
+// fallback strip below, so authored data is never silently dropped.
 import Block from '../Block.astro';
 import Diagram from '../Diagram.astro';
 import ToolCalculator from '../ToolCalculator.astro';
@@ -28,17 +31,19 @@ export interface Props {
 	ventureRef?: string;
 }
 const { section, tool, toolSubmitEndpoint, route, ventureRef } = Astro.props;
+const referencedDiagramIds = new Set((section.blocks ?? []).filter((b: any) => b.blockType === 'diagram').map((b: any) => b.diagramId));
+const unreferencedDiagrams = (section.diagrams ?? []).filter((d: any) => !referencedDiagramIds.has(d.diagramId));
 ---
 <section id={section.sectionId} class="py-8" data-reveal>
 	{section.eyebrow && <p class="text-sm font-mono uppercase tracking-wide text-accent-primary mb-3">{section.eyebrow}</p>}
 	{section.heading && <h1 class="font-display text-3xl sm:text-4xl font-bold mb-3 max-w-2xl">{section.heading}</h1>}
 	{section.subheading && <p class="text-lg text-ink/80 max-w-2xl mb-6">{section.subheading}</p>}
 	<div class="max-w-2xl space-y-5">
-		{section.blocks?.map((b: any) => <Block block={b} />)}
+		{section.blocks?.map((b: any) => <Block block={b} diagrams={section.diagrams} />)}
 	</div>
-	{section.diagrams?.length > 0 && (
+	{unreferencedDiagrams.length > 0 && (
 		<div class="max-w-2xl space-y-8 mt-8">
-			{section.diagrams.map((d: any) => <Diagram diagram={d} />)}
+			{unreferencedDiagrams.map((d: any) => <Diagram diagram={d} />)}
 		</div>
 	)}
 	{section.toolRef && tool && toolSubmitEndpoint && (
