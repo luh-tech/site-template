@@ -14,6 +14,14 @@
 // multi-section content (e.g. an article split into several `article`
 // sections, each with its own heading) gets a real, useful jump-list for
 // free; a single-section page simply renders nothing here.
+//
+// Scrollspy (industry-standard sticky-TOC pattern, the same shape
+// Docusaurus/Mintlify/Nextra/VitePress/Astro Starlight all converge on): an
+// IntersectionObserver watches each linked section and marks the current
+// one with aria-current, matching the site's own [data-reveal] observer
+// convention in SiteLayout rather than inventing a second one. Degrades to
+// a plain static jump-list with no active-state if JS never runs -- every
+// link is still a real, working anchor.
 export interface Props {
 	sections: Array<{ sectionId: string; heading?: string }>;
 	class?: string;
@@ -22,12 +30,15 @@ const { sections, class: className = '' } = Astro.props;
 const entries = (sections ?? []).filter((s) => s.heading);
 ---
 {entries.length > 1 && (
-	<nav class={`text-sm ${className}`} aria-label="Table of contents">
+	<nav class={`text-sm ${className}`} aria-label="Table of contents" data-toc>
 		<p class="font-display font-semibold uppercase tracking-wide text-xs text-ink/50 mb-2">On this page</p>
 		<ul class="space-y-1.5 border-l border-ink/10">
 			{entries.map((s) => (
 				<li>
-					<a href={`#${s.sectionId}`} class="block pl-3 -ml-px border-l-2 border-transparent text-ink/70 hover:text-ink hover:border-accent-primary transition-colors">
+					<a
+						href={`#${s.sectionId}`}
+						class="block pl-3 -ml-px border-l-2 border-transparent text-ink/70 transition-colors hover:text-ink hover:border-accent-primary [&[aria-current]]:border-accent-primary [&[aria-current]]:text-ink [&[aria-current]]:font-medium"
+					>
 						{s.heading}
 					</a>
 				</li>
@@ -35,3 +46,30 @@ const entries = (sections ?? []).filter((s) => s.heading);
 		</ul>
 	</nav>
 )}
+<script>
+	function initScrollSpies() {
+		document.querySelectorAll<HTMLElement>('nav[data-toc]').forEach((nav) => {
+			const links = Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'));
+			const targets = links
+				.map((link) => ({ link, el: document.getElementById(link.getAttribute('href')!.slice(1)) }))
+				.filter((t): t is { link: HTMLAnchorElement; el: HTMLElement } => !!t.el);
+			if (!targets.length) return;
+
+			const setActive = (id: string) => {
+				for (const { link, el } of targets) {
+					link.toggleAttribute('aria-current', el.id === id);
+				}
+			};
+
+			const observer = new IntersectionObserver(
+				(observerEntries) => {
+					const visible = observerEntries.filter((e) => e.isIntersecting);
+					if (visible.length) setActive(visible[0].target.id);
+				},
+				{ rootMargin: '-20% 0px -70% 0px', threshold: 0 }
+			);
+			targets.forEach(({ el }) => observer.observe(el));
+		});
+	}
+	initScrollSpies();
+</script>
