@@ -25,28 +25,49 @@ const maxRevenue = Math.max(...rings.map((r) => r.revenue), 1);
 const scale = MAX_R / Math.sqrt(maxRevenue);
 
 const width = rings.length * CELL_W;
-const height = CELL_W + 40;
+const height = CELL_W + 76;
+
+const fmtUSD = (n: number) => `$${n.toLocaleString('en-US')}M`;
 
 const cells = rings.map((r, i) => {
 	const cx = i * CELL_W + CELL_W / 2;
 	const cy = CELL_W / 2 + 20;
 	const revenueR = Math.max(Math.sqrt(r.revenue) * scale, 4);
 	const costR = Math.max(Math.sqrt(r.cost) * scale, 2);
-	return { ...r, cx, cy, revenueR, costR };
+	// Real signal, not decoration: cost exceeding revenue means the ring
+	// between them has vanished -- the company is running at a loss (the
+	// real source essay's own "cost circle has grown past its revenue"
+	// case). Flagged, not just left to a same-color radius difference a
+	// reader could easily miss.
+	const atLoss = r.cost > r.revenue;
+	return { ...r, cx, cy, revenueR, costR, atLoss };
 });
+const maxR = Math.max(...cells.map((c) => Math.max(c.revenueR, c.costR)));
 ---
 <svg
 	xmlns="http://www.w3.org/2000/svg"
 	viewBox={`0 0 ${width} ${height}`}
 	class={className}
 	role="img"
-	aria-label={`Revenue and cost ring comparison across ${rings.length} companies`}
+	aria-label={`Revenue and cost ring comparison across ${rings.length} companies: ${rings.map((r) => `${r.label} revenue ${fmtUSD(r.revenue)}, cost ${fmtUSD(r.cost)}`).join('; ')}`}
 >
 	{cells.map((c) => (
 		<g>
 			<circle cx={c.cx} cy={c.cy} r={c.revenueR} fill="currentColor" fill-opacity="0.06" stroke="currentColor" stroke-width="1.5" />
-			<circle cx={c.cx} cy={c.cy} r={c.costR} class={highlightClass} fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.5" />
-			<text x={c.cx} y={c.cy + c.revenueR + 20} text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="currentColor" fill-opacity="0.7">{c.label}</text>
+			<circle
+				cx={c.cx}
+				cy={c.cy}
+				r={c.costR}
+				class={c.atLoss ? 'text-red-600' : highlightClass}
+				fill="currentColor"
+				fill-opacity="0.18"
+				stroke="currentColor"
+				stroke-width={c.atLoss ? 2 : 1.5}
+				stroke-dasharray={c.atLoss ? '4 3' : undefined}
+			/>
+			<text x={c.cx} y={c.cy + maxR + 20} text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="13" fill="currentColor">{c.label}</text>
+			<text x={c.cx} y={c.cy + maxR + 36} text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="currentColor" fill-opacity="0.6">rev {fmtUSD(c.revenue)}</text>
+			<text x={c.cx} y={c.cy + maxR + 50} text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" class={c.atLoss ? 'text-red-600' : undefined} fill="currentColor" fill-opacity={c.atLoss ? 1 : 0.6}>cost {fmtUSD(c.cost)}{c.atLoss ? ' -- at a loss' : ''}</text>
 		</g>
 	))}
 </svg>
