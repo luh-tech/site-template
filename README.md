@@ -173,6 +173,21 @@ convention for the same reason -- orient the reader inside a long page):
   an empty 200px rail next to a single-section page is dead space, not
   navigation.
 
+## Icon set: generic vs. construction-specific (0.5.1)
+
+`Icon.astro`'s shared ~24-icon set mixes true portfolio-generic icons with
+Ectropy-specific ones (found live building LuhTech-Business's own visual
+system out to the same standard). The file now documents the split
+explicitly in its own header comment -- a consumer wiring `Section`'s
+`icons` prop on a non-construction venture site should only reach for the
+GENERIC subset (location-pin, decision-chain, cost-tag, schema-doc,
+integration-plug, sync-loop, audit-trail, studio-compass, portfolio-grid,
+code-bracket, team-people, handshake, rocket, data-flow, mail-envelope,
+message-bubble, external-link, lock); the remainder (voxel-grid,
+field-inspection, hard-hat, building, field-team, zone-map, change-order,
+crane) reads as borrowed Ectropy content anywhere else. No icons were
+added, removed, or renamed -- documentation only.
+
 ## Migrating a venture site
 
 A migration is: author `content/site.<venture>.json` + `content/pages/*.json`
