@@ -26,7 +26,8 @@
   "bin": {
     "luhtech-tokens": "./bin/luhtech-tokens.mjs",
     "luhtech-page-lexicon": "./bin/luhtech-page-lexicon.mjs",
-    "luhtech-page-claims": "./bin/luhtech-page-claims.mjs"
+    "luhtech-page-claims": "./bin/luhtech-page-claims.mjs",
+    "luhtech-sync-marks": "./bin/luhtech-sync-marks.mjs"
   },
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.mjs"
