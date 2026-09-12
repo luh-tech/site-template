@@ -31,21 +31,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { homedir } from 'node:os';
-
-// Real repo directory name + real favicon path within it, per venture --
-// the two differ from the venture id (repo casing, Replique's nested
-// site/ dir) so this can't be derived mechanically from the id alone.
-const VENTURES = [
-  { id: 'ectropy', repo: 'Ectropy-Business', favicon: 'apps/marketing-site/public/favicon.svg' },
-  { id: 'qullqa', repo: 'Qullqa', favicon: 'public/favicon.svg' },
-  { id: 'siltana', repo: 'Siltana-Business', favicon: 'public/favicon.svg' },
-  { id: 'jobsitecontrol', repo: 'JobsiteControl', favicon: 'public/favicon.svg' },
-  { id: 'viiva', repo: 'Viiva', favicon: 'public/favicon.svg' },
-  { id: 'ohjaus', repo: 'Ohjaus', favicon: 'public/favicon.svg' },
-  { id: 'raizal', repo: 'Raizal', favicon: 'public/favicon.svg' },
-  { id: 'replique', repo: 'Replique', favicon: 'site/public/favicon.svg' },
-  { id: 'hilja', repo: 'Hilja', favicon: 'public/favicon.svg' },
-];
+import { VENTURES } from './lib/ventures.mjs';
 
 const args = process.argv.slice(2);
 const outputArg = args.find((a) => !a.startsWith('--'));

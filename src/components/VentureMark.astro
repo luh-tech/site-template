@@ -1,0 +1,68 @@
+---
+// Renders a venture's real mark on a sibling site (CrossLink.astro's own
+// use case: luh.tech's Ventures page showing every real venture). Prefers
+// the venture's own real ANIMATED_INNER cell-grid reveal (same technique
+// JobsiteControl's Logo.astro established -- staggered .logo-cell-in,
+// then .logo-cell-letter flips fill to white) when one has been pulled
+// into VENTURE_MARKS via bin/luhtech-sync-animated-marks.mjs; falls back
+// to the static /brand/{brandRef}-mark.svg file (onerror-hidden if even
+// that's missing) for every venture that doesn't have one yet -- most
+// don't, today. Not every venture needs to build an animated mark for
+// this to work; it degrades honestly per-venture instead of assuming
+// universal coverage.
+import { VENTURE_MARKS } from '../lib/venture-marks.generated';
+
+export interface Props {
+	brandRef: string;
+	class?: string;
+}
+const { brandRef, class: className = 'h-6 w-6 mb-2' } = Astro.props;
+const animated = VENTURE_MARKS[brandRef];
+---
+{animated ? (
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox={animated.viewBox} class={className} role="img" aria-label={brandRef} set:html={animated.cells} />
+) : (
+	<img
+		src={`/brand/${brandRef}-mark.svg`}
+		alt=""
+		class={className}
+		loading="lazy"
+		onerror="this.style.display='none'"
+	/>
+)}
+
+<style>
+	svg :global(.logo-cell) {
+		transform-box: fill-box;
+		transform-origin: center;
+		opacity: 0;
+		transform: scale(0.4);
+		animation: logo-cell-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+	}
+	svg :global(.logo-cell-letter) {
+		transform-box: fill-box;
+		transform-origin: center;
+		opacity: 0;
+		transform: scale(0.4);
+		animation:
+			logo-cell-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+			logo-flip-to-white 0.3s ease-out forwards;
+	}
+	@keyframes logo-cell-in {
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+	@keyframes logo-flip-to-white {
+		to { fill: #FFFFFF; }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		svg :global(.logo-cell),
+		svg :global(.logo-cell-letter) {
+			animation: none;
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+</style>
