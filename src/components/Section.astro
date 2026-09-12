@@ -17,7 +17,7 @@ import Sources from './sections/Sources.astro';
 import Cta from './sections/Cta.astro';
 import Legal from './sections/Legal.astro';
 import Article from './sections/Article.astro';
-import CrossLink from './CrossLink.astro';
+import VentureCard from './VentureCard.astro';
 
 const SECTION_COMPONENTS: Record<string, any> = {
 	hero: Hero,
@@ -84,9 +84,14 @@ if (!Component) {
 	// were silently invisible before this fix -- only Open.astro rendered
 	// them. Open.astro's own inline rendering was removed to avoid a
 	// double-render now that this is the single path.
+	//
+	// VentureCard (2026-09-12, supersedes the old bare CrossLink.astro):
+	// mark to the left of a real display name (identity.name from the
+	// venture's own brand.json via VENTURE_DIRECTORY), not the raw
+	// brandRef slug stacked above it.
 	section.crossLinks?.length > 0 && (
 		<div class="grid gap-3 sm:grid-cols-2 mt-4" data-reveal>
-			{section.crossLinks.map((cl: any) => <CrossLink crossLink={cl} />)}
+			{section.crossLinks.map((cl: any) => <VentureCard crossLink={cl} />)}
 		</div>
 	)
 }
