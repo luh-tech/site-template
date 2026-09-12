@@ -5,7 +5,10 @@
   "type": "module",
   "license": "Apache-2.0",
   "author": "LuhTech Holdings",
-  "repository": "github:luh-tech/site-template",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luh-tech/site-template.git"
+  },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
     "access": "public",
@@ -24,11 +27,11 @@
     "./components/sections/*": "./src/components/sections/*"
   },
   "bin": {
-    "luhtech-tokens": "./bin/luhtech-tokens.mjs",
-    "luhtech-page-lexicon": "./bin/luhtech-page-lexicon.mjs",
-    "luhtech-page-claims": "./bin/luhtech-page-claims.mjs",
-    "luhtech-sync-marks": "./bin/luhtech-sync-marks.mjs",
-    "luhtech-sync-animated-marks": "./bin/luhtech-sync-animated-marks.mjs"
+    "luhtech-tokens": "bin/luhtech-tokens.mjs",
+    "luhtech-page-lexicon": "bin/luhtech-page-lexicon.mjs",
+    "luhtech-page-claims": "bin/luhtech-page-claims.mjs",
+    "luhtech-sync-marks": "bin/luhtech-sync-marks.mjs",
+    "luhtech-sync-animated-marks": "bin/luhtech-sync-animated-marks.mjs"
   },
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.mjs"
