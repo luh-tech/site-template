@@ -5,15 +5,16 @@
 // reason: the relationshipLine is authored text stating the real
 // relationship, not an incidental mention).
 //
-// Mark image (2026-09-11): a consuming site may keep the referenced
-// sibling's real mark at /brand/{brandRef}-mark.svg (the convention every
-// site's own public/brand/ already follows for its own wordmark) -- shown
-// when present. Not every consuming site carries every sibling's mark
-// (e.g. ectropy.ai's own about.json cross-links to "luhtech" but has no
-// luhtech-mark.svg locally, by design -- only the holding-company site
-// needs every sibling's mark), so a missing file must fail silently
-// (onerror hides the broken-image icon) rather than assuming the asset
-// exists everywhere this shared component is used.
+// Mark (2026-09-11, upgraded to VentureMark.astro same day): renders the
+// referenced sibling's real animated mark when one has been pulled via
+// luhtech-sync-animated-marks (today: JobsiteControl only), falling back
+// to the static /brand/{brandRef}-mark.svg otherwise -- see
+// VentureMark.astro's own comment for the full fallback chain, including
+// why a missing file has to fail silently (not every consuming site
+// carries every sibling's mark; e.g. ectropy.ai's own about.json cross-
+// links to "luhtech" but has no luhtech-mark.svg locally, by design).
+import VentureMark from './VentureMark.astro';
+
 export interface Props {
 	crossLink: { brandRef: string; relationshipLine: string; href: string };
 }
@@ -23,13 +24,7 @@ const { crossLink } = Astro.props;
 	href={crossLink.href}
 	class="block rounded-md border border-ink/15 p-4 hover:border-accent-primary transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary"
 >
-	<img
-		src={`/brand/${crossLink.brandRef}-mark.svg`}
-		alt=""
-		class="h-6 w-6 mb-2"
-		loading="lazy"
-		onerror="this.style.display='none'"
-	/>
+	<VentureMark brandRef={crossLink.brandRef} />
 	<span class="font-display font-semibold">{crossLink.brandRef}</span>
 	<p class="text-sm text-ink/70 mt-1">{crossLink.relationshipLine}</p>
 </a>
