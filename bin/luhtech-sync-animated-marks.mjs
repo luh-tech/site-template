@@ -1,25 +1,32 @@
 #!/usr/bin/env node
 /**
- * Pulls each venture's real animated mark (a Logo.astro that exports
- * `VIEWBOX` and `ANIMATED_INNER` -- the staggered cell-reveal technique
- * JobsiteControl's Logo.astro established first: cells pop in bottom-to-
- * top, then any cell carrying class="logo-cell-letter" flips fill to
- * white a beat later, tracing a letterform through negative space) into
- * this package's generated venture-marks registry, consumed by
+ * Pulls each venture's real animated mark from a committed, self-contained
+ * public/brand/{id}-mark-animated.svg in its sibling repo checkout --
+ * viewBox + full inner content (a scoped <style> block with the venture's
+ * own uniquely-prefixed classes/keyframes, plus the animated shapes) --
+ * into this package's generated venture-marks registry, consumed by
  * VentureMark.astro.
  *
- * Not every venture has one of these yet -- most don't (as of 2026-09,
- * only JobsiteControl exports ANIMATED_INNER; Ectropy's own Logo.astro
- * has a real mark but no animation). A venture with no match here isn't
- * a bug this tool needs to fix -- VentureMark.astro's own static-image
- * fallback (luhtech-sync-marks.mjs's output) covers it honestly until
- * that venture builds its own animated Logo.astro following this same
- * VIEWBOX/ANIMATED_INNER convention.
+ * Every entry is fully self-contained (its own <style>, own prefixed class
+ * names) specifically so multiple marks can be inlined on one page (e.g.
+ * luh.tech's Ventures page, showing every venture at once) without their
+ * animations colliding or overriding each other's keyframes.
  *
- * Local dev-time tool only -- reads sibling repo checkouts on disk, same
- * as luhtech-sync-marks.mjs, so it can't run in CI. Regenerates
- * src/lib/venture-marks.generated.ts entirely on every run (it's
- * generated output, never hand-edited).
+ * Superseded 2026-09-12 (Phase 2): previously scraped VIEWBOX/ANIMATED_INNER
+ * consts out of each venture's Logo.astro via regex, which only worked for
+ * the one venture (JobsiteControl) that happened to follow that convention
+ * -- the other 8 real, working, live animated marks existed only as inline
+ * consts in each venture's own index.astro, invisible to this tool. Every
+ * venture now commits one real portable .svg file instead; this tool just
+ * reads it.
+ *
+ * Not every venture has one yet -- a venture with no match here isn't a
+ * bug this tool needs to fix; VentureMark.astro's own static-image
+ * fallback (luhtech-sync-marks.mjs's output) covers it honestly.
+ *
+ * Local dev-time tool only -- reads sibling repo checkouts on disk, so it
+ * can't run in CI. Regenerates src/lib/venture-marks.generated.ts entirely
+ * on every run (it's generated output, never hand-edited).
  *
  * Usage:
  *   luhtech-sync-animated-marks [--dev-root <path>]
@@ -37,17 +44,12 @@ const args = process.argv.slice(2);
 const devRootFlagIdx = args.indexOf('--dev-root');
 const devRoot = devRootFlagIdx >= 0 ? args[devRootFlagIdx + 1] : join(homedir(), 'dev', 'luhtech');
 
-// Matches: const VIEWBOX = "...";  and  const ANIMATED_INNER = `...`;
-// (JobsiteControl's own real declarations, verbatim -- the required
-// export names for a venture's Logo.astro to be pulled here).
-const VIEWBOX_RE = /const\s+VIEWBOX\s*=\s*"([^"]*)"/;
-const ANIMATED_INNER_RE = /const\s+ANIMATED_INNER\s*=\s*`([^`]*)`/;
+const SVG_RE = /<svg[^>]*viewBox="([^"]*)"[^>]*>([\s\S]*)<\/svg>/;
 
-function extract(source, ventureId) {
-  const vb = source.match(VIEWBOX_RE);
-  const cells = source.match(ANIMATED_INNER_RE);
-  if (!vb || !cells) return null;
-  return { viewBox: vb[1], cells: cells[1] };
+function extract(source) {
+  const m = source.match(SVG_RE);
+  if (!m) return null;
+  return { viewBox: m[1], markup: m[2].trim() };
 }
 
 function main() {
@@ -55,19 +57,19 @@ function main() {
   const skipped = [];
 
   for (const v of VENTURES) {
-    if (!v.logoAstro) {
-      skipped.push(`${v.id}: no logoAstro path configured`);
+    if (!v.animatedMarkSvg) {
+      skipped.push(`${v.id}: no animatedMarkSvg path configured`);
       continue;
     }
-    const srcPath = join(devRoot, v.repo, v.logoAstro);
+    const srcPath = join(devRoot, v.repo, v.animatedMarkSvg);
     if (!existsSync(srcPath)) {
-      skipped.push(`${v.id}: no Logo.astro at ${srcPath}`);
+      skipped.push(`${v.id}: no animated mark at ${srcPath}`);
       continue;
     }
     const source = readFileSync(srcPath, 'utf-8');
-    const entry = extract(source, v.id);
+    const entry = extract(source);
     if (!entry) {
-      skipped.push(`${v.id}: Logo.astro exists but has no VIEWBOX/ANIMATED_INNER (no animated mark yet)`);
+      skipped.push(`${v.id}: ${srcPath} exists but isn't a valid <svg viewBox=...>...</svg>`);
       continue;
     }
     found.push({ id: v.id, ...entry });
@@ -75,18 +77,22 @@ function main() {
   }
 
   const entries = found
-    .map((f) => `  ${f.id}: ${JSON.stringify({ viewBox: f.viewBox, cells: f.cells })},`)
+    .map((f) => `  ${f.id}: ${JSON.stringify({ viewBox: f.viewBox, markup: f.markup })},`)
     .join('\n');
 
   const output = `// GENERATED by bin/luhtech-sync-animated-marks.mjs -- DO NOT HAND-EDIT.
 // Regenerate with \`luhtech-sync-animated-marks\` (reads each venture's own
-// Logo.astro from its sibling repo checkout on disk). A venture with no
-// entry here has no animated mark pulled yet -- VentureMark.astro falls
-// back to its static /brand/{id}-mark.svg, which is not a bug, it's most
-// ventures' real current state.
+// public/brand/{id}-mark-animated.svg from its sibling repo checkout on
+// disk). A venture with no entry here has no animated mark pulled yet --
+// VentureMark.astro falls back to its static /brand/{id}-mark.svg, which
+// is not a bug, it's most ventures' real current state until they commit
+// one.
 export interface VentureMarkEntry {
 \tviewBox: string;
-\tcells: string;
+\t/** Full self-contained inner SVG content: a scoped <style> block (the
+\t * venture's own uniquely-prefixed classes/keyframes) plus the animated
+\t * shapes -- safe to inline alongside other ventures' marks on one page. */
+\tmarkup: string;
 }
 
 export const VENTURE_MARKS: Record<string, VentureMarkEntry> = {
