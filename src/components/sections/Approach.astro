@@ -1,12 +1,24 @@
 ---
 // sectionKind: approach -- how it works.
+//
+// icons.section support (2026-09-11): Proof.astro and Open.astro already
+// read icons?.section?.[sectionId] (SectionIcons' own doc comment,
+// Section.astro) -- Approach.astro's Props never even declared the prop,
+// so any consumer passing one for an approach-kind section got nothing,
+// silently. Same fix shape as Section.astro's own crossLinks[] fix
+// (see that file's comment): a documented, schema-legal mechanism that
+// one section-kind component had quietly never wired up.
 import Block from '../Block.astro';
+import Icon from '../Icon.astro';
+import type { SectionIcons } from '../Section.astro';
 
-export interface Props { section: any }
-const { section } = Astro.props;
+export interface Props { section: any; icons?: SectionIcons }
+const { section, icons } = Astro.props;
+const sectionIcon = icons?.section?.[section.sectionId];
 ---
 <section id={section.sectionId} class="py-8" data-reveal>
 	{section.eyebrow && <p class="text-sm font-mono uppercase tracking-wide text-accent-primary mb-3">{section.eyebrow}</p>}
+	{sectionIcon && <Icon name={sectionIcon} class="w-8 h-8 text-accent-primary mb-3" />}
 	{section.heading && <h2 class="font-display text-2xl font-bold mb-3">{section.heading}</h2>}
 	{section.subheading && <p class="text-ink/80 max-w-2xl mb-4">{section.subheading}</p>}
 	{section.blocks?.map((b: any) => <Block block={b} class="mb-3" />)}
