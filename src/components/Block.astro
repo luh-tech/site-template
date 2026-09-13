@@ -33,7 +33,7 @@ import Diagram from './Diagram.astro';
 import Icon from './Icon.astro';
 
 export interface Props {
-	block: { blockType: string; text?: string; label?: string; href?: string; diagramId?: string; src?: string; alt?: string; caption?: string };
+	block: { blockType: string; text?: string; label?: string; href?: string; diagramId?: string; src?: string; alt?: string; caption?: string; name?: string; title?: string };
 	// This section's own diagrams[] array, only needed when block.blockType
 	// is "diagram" -- the block is a position, diagrams[] stays the data.
 	diagrams?: { diagramId: string; diagramType: string; caption?: string; data: any }[];
@@ -96,6 +96,23 @@ if (block.blockType === 'diagram') {
 		<img src={block.src} alt={block.alt} class="w-full rounded-md" loading="lazy" />
 		{block.caption && <figcaption class="text-sm text-ink/60 mt-2 text-center">{block.caption}</figcaption>}
 	</figure>
+)}
+{block.blockType === 'bio' && (
+	<div class={`rounded-md border border-ink/15 p-5 ${className}`}>
+		<div class="flex items-center gap-3 mb-3">
+			<span
+				class="flex items-center justify-center w-10 h-10 rounded-full bg-accent-primary/10 text-accent-primary font-display font-bold text-sm shrink-0"
+				aria-hidden="true"
+			>
+				{(block.name ?? '').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
+			</span>
+			<div>
+				{block.name && <p class="font-display font-semibold leading-tight">{block.name}</p>}
+				{block.title && <p class="text-sm text-accent-secondary font-mono uppercase tracking-wide">{block.title}</p>}
+			</div>
+		</div>
+		<p class="text-sm text-ink/80 leading-relaxed">{block.text}</p>
+	</div>
 )}
 {isExternalLink && (
 	<Icon name="external-link" class="inline-block w-3.5 h-3.5 ml-1 align-text-top text-accent-primary/70" />
