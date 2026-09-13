@@ -12,13 +12,33 @@ import type { SectionIcons } from '../Section.astro';
 export interface Props { section: any; icons?: SectionIcons }
 const { section, icons } = Astro.props;
 const sectionIcon = icons?.section?.[section.sectionId];
+
+// Bio blocks (e.g. a Founders/Team proof section) read as an enterprise
+// team grid -- side by side on desktop -- rather than stacked paragraphs.
+// Contiguous runs of blockType:"bio" group into one grid; every other
+// blockType renders individually, unchanged.
+const blockRuns: { kind: 'bio' | 'other'; blocks: any[] }[] = [];
+for (const b of section.blocks ?? []) {
+	const kind = b.blockType === 'bio' ? 'bio' : 'other';
+	const last = blockRuns[blockRuns.length - 1];
+	if (last && last.kind === kind) last.blocks.push(b);
+	else blockRuns.push({ kind, blocks: [b] });
+}
 ---
 <section id={section.sectionId} class="py-8" data-reveal>
 	{section.eyebrow && <p class="text-sm font-mono uppercase tracking-wide text-accent-primary mb-3">{section.eyebrow}</p>}
 	{sectionIcon && <Icon name={sectionIcon} class="w-8 h-8 text-accent-primary mb-3" />}
 	{section.heading && <h2 class="font-display text-2xl font-bold mb-3">{section.heading}</h2>}
 	{section.subheading && <p class="text-ink/80 max-w-2xl mb-4">{section.subheading}</p>}
-	{section.blocks?.map((b: any) => <Block block={b} class="mb-3" />)}
+	{blockRuns.map((run) =>
+		run.kind === 'bio' ? (
+			<div class="grid gap-4 sm:grid-cols-2 mb-3">
+				{run.blocks.map((b) => <Block block={b} />)}
+			</div>
+		) : (
+			run.blocks.map((b) => <Block block={b} class="mb-3" />)
+		)
+	)}
 	{section.claims?.length > 0 && (
 		<ul class="space-y-2 mb-6">
 			{section.claims.map((c: any) => <li class="leading-relaxed">{c.text}</li>)}
