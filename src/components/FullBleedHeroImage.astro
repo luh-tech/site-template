@@ -1,0 +1,20 @@
+---
+// A viewport-breakout full-bleed hero image band, placed above a page's
+// Hero section. Promoted from LuhTech-Business (2026-09-12), where it was
+// duplicated verbatim across about/ventures/studio/contact.astro -- one
+// real shared component instead. Not SplashHero -- that's a different
+// thing (a one-time wireframe-wordmark-reveal splash intro for a
+// homepage's own, distinct crossfading-photography hero), this is a
+// plain static image band any page can use.
+export interface Props {
+	src: string;
+	alt: string;
+	width: number;
+	height: number;
+	heightClass?: string;
+}
+const { src, alt, width, height, heightClass = 'h-[45vh] min-h-[320px]' } = Astro.props;
+---
+<div class="relative w-screen left-1/2 -translate-x-1/2 -mt-16 mb-8">
+	<img src={src} alt={alt} width={width} height={height} class={`w-full ${heightClass} object-cover`} />
+</div>
