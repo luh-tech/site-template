@@ -9,7 +9,7 @@
 // (see that file's comment): a documented, schema-legal mechanism that
 // one section-kind component had quietly never wired up.
 import Block from '../Block.astro';
-import Icon from '../Icon.astro';
+import SectionHeading from '../SectionHeading.astro';
 import type { SectionIcons } from '../Section.astro';
 
 export interface Props { section: any; icons?: SectionIcons }
@@ -17,9 +17,6 @@ const { section, icons } = Astro.props;
 const sectionIcon = icons?.section?.[section.sectionId];
 ---
 <section id={section.sectionId} class="py-8" data-reveal>
-	{section.eyebrow && <p class="text-sm font-mono uppercase tracking-wide text-accent-primary mb-3">{section.eyebrow}</p>}
-	{sectionIcon && <Icon name={sectionIcon} class="w-8 h-8 text-accent-primary mb-3" />}
-	{section.heading && <h2 class="font-display text-2xl font-bold mb-3">{section.heading}</h2>}
-	{section.subheading && <p class="text-ink/80 max-w-2xl mb-4">{section.subheading}</p>}
+	<SectionHeading eyebrow={section.eyebrow} heading={section.heading} subheading={section.subheading} icon={sectionIcon} />
 	{section.blocks?.map((b: any) => <Block block={b} class="mb-3" />)}
 </section>

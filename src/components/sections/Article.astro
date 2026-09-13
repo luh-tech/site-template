@@ -17,6 +17,7 @@
 // fallback strip below, so authored data is never silently dropped.
 import Block from '../Block.astro';
 import Diagram from '../Diagram.astro';
+import SectionHeading from '../SectionHeading.astro';
 import ToolCalculator from '../ToolCalculator.astro';
 
 export interface Props {
@@ -35,9 +36,15 @@ const referencedDiagramIds = new Set((section.blocks ?? []).filter((b: any) => b
 const unreferencedDiagrams = (section.diagrams ?? []).filter((d: any) => !referencedDiagramIds.has(d.diagramId));
 ---
 <section id={section.sectionId} class="py-8" data-reveal>
-	{section.eyebrow && <p class="text-sm font-mono uppercase tracking-wide text-accent-primary mb-3">{section.eyebrow}</p>}
-	{section.heading && <h1 class="font-display text-3xl sm:text-4xl font-bold mb-3 max-w-2xl">{section.heading}</h1>}
-	{section.subheading && <p class="text-lg text-ink/80 max-w-2xl mb-6">{section.subheading}</p>}
+	<SectionHeading
+		level="h1"
+		eyebrow={section.eyebrow}
+		heading={section.heading}
+		subheading={section.subheading}
+		headingClass="text-3xl sm:text-4xl"
+		subheadingClass="text-lg"
+		class="mb-3 max-w-2xl"
+	/>
 	<div class="max-w-2xl space-y-5">
 		{section.blocks?.map((b: any) => <Block block={b} diagrams={section.diagrams} />)}
 	</div>

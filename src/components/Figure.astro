@@ -2,6 +2,12 @@
 // Renders one page.schema.json figure with its provenance.sourceRef --
 // provenance.public must be true (schema const), so every figure that
 // reaches this component is already cleared to appear on a public page.
+//
+// Card treatment (2026-09-13): a bordered card with a top accent rule,
+// rather than bare stacked text -- the same visual register a real
+// published research figure gets on an analyst site, since every figure
+// that reaches here already carries a citable public source. The
+// citation sits below a divider so it reads as a footnote, not body copy.
 export interface Props {
 	figure: {
 		figureId: string;
@@ -12,11 +18,11 @@ export interface Props {
 }
 const { figure } = Astro.props;
 ---
-<div class="flex flex-col gap-1" id={figure.figureId}>
-	<span class="font-display text-3xl font-bold">
-		{figure.value}{figure.unit && <span class="text-lg font-normal ml-1">{figure.unit}</span>}
-	</span>
-	<span class="text-xs text-ink/60">
+<div class="relative rounded-md border border-ink/15 bg-canvas p-5 overflow-hidden" id={figure.figureId}>
+	<span class="absolute top-0 left-0 right-0 h-1 bg-accent-primary" aria-hidden="true"></span>
+	<span class="font-display text-4xl font-bold leading-none block">{figure.value}</span>
+	{figure.unit && <span class="text-sm text-ink/70 font-medium mt-2 block">{figure.unit}</span>}
+	<span class="text-xs text-ink/50 mt-4 pt-3 border-t border-ink/10 block">
 		{figure.provenance.sourceRef}
 		{figure.provenance.observedAt && ` (${figure.provenance.observedAt})`}
 	</span>

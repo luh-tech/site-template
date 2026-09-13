@@ -1,0 +1,69 @@
+---
+// Shared heading treatment for every sectionKind -- eyebrow, heading (with
+// an icon or accent rule beside it), and subheading. Was previously
+// duplicated near-verbatim across Hero/Problem/Approach/Proof/Open/
+// Audiences/Status/Sources/Cta.astro, each with slight drift (Cta.astro
+// silently never rendered section.eyebrow at all -- a real gap, since
+// eyebrow is a top-level section field per page.schema.json, not
+// sectionKind-specific). One component now owns this so every section kind
+// gets the same visual language and no consumer can quietly skip a field
+// the schema already allows.
+//
+// The icon-or-rule choice is deliberate, not decorative: a section with a
+// real, content-matched icon (see Icon.astro's own comment on choosing
+// icons that name what the text says, not what looks nice) shows that
+// icon as its accent; a section with no icon still gets a colored rule in
+// the same accent color, so the visual anchor beside every heading is
+// never absent -- this is what ties body copy back to the hero's own
+// accent-rule-beside-heading motif (index.astro, Hero.astro's h1).
+import Icon from './Icon.astro';
+
+export interface Props {
+	eyebrow?: string;
+	heading?: string;
+	subheading?: string;
+	icon?: string;
+	/** h1 for a page's own hero, h2 for every other sectionKind. */
+	level?: 'h1' | 'h2';
+	/** 'muted' is Status.astro's own deliberately quiet stage-statement tone. */
+	tone?: 'default' | 'muted';
+	/** Cta.astro's own centered layout. */
+	center?: boolean;
+	headingClass?: string;
+	subheadingClass?: string;
+	class?: string;
+}
+const {
+	eyebrow,
+	heading,
+	subheading,
+	icon,
+	level = 'h2',
+	tone = 'default',
+	center = false,
+	headingClass = 'text-2xl',
+	subheadingClass = '',
+	class: rowClass = 'mb-3',
+} = Astro.props;
+const Heading = level;
+const muted = tone === 'muted';
+const eyebrowTone = muted ? 'text-ink/50' : 'text-accent-primary';
+const accentTone = muted ? 'text-ink/30' : 'text-accent-primary';
+const ruleTone = muted ? 'bg-ink/25' : 'bg-accent-primary';
+---
+{eyebrow && (
+	<p class={`text-sm font-mono uppercase tracking-wide ${eyebrowTone} mb-3 ${center ? 'text-center' : ''}`}>{eyebrow}</p>
+)}
+{heading && (
+	<div class={`flex items-center gap-3 ${center ? 'justify-center' : ''} ${rowClass}`}>
+		{icon ? (
+			<Icon name={icon} class={`w-7 h-7 ${accentTone} shrink-0`} />
+		) : (
+			<span class={`w-1 self-stretch min-h-[1.4em] ${ruleTone} rounded-full shrink-0`} aria-hidden="true" />
+		)}
+		<Heading class={`font-display font-bold ${headingClass}`}>{heading}</Heading>
+	</div>
+)}
+{subheading && (
+	<p class={`text-ink/80 ${center ? 'max-w-xl mx-auto text-center' : 'max-w-2xl'} ${subheadingClass} mb-4`}>{subheading}</p>
+)}
