@@ -11,16 +11,19 @@ import Block from '../Block.astro';
 import CtaLink from '../CtaLink.astro';
 import LeadCaptureForm from '../LeadCaptureForm.astro';
 import SectionHeading from '../SectionHeading.astro';
+import type { SectionIcons } from '../Section.astro';
 
 export interface Props {
 	section: any;
 	leadCapture?: { destination: string; source: string; ventureField: string; honeypotField: string; minSubmitMs?: number };
 	companyLabel?: string;
+	icons?: SectionIcons;
 }
-const { section, leadCapture, companyLabel } = Astro.props;
+const { section, leadCapture, companyLabel, icons } = Astro.props;
+const sectionIcon = icons?.section?.[section.sectionId];
 ---
 <section id={section.sectionId} class="py-12 text-center border-t border-ink/10" data-reveal>
-	<SectionHeading eyebrow={section.eyebrow} heading={section.heading} subheading={section.subheading} center class="mb-3" />
+	<SectionHeading eyebrow={section.eyebrow} heading={section.heading} subheading={section.subheading} icon={sectionIcon} center class="mb-3" />
 	{section.blocks?.map((b: any) => <Block block={b} class="mb-4 max-w-xl mx-auto text-left" />)}
 	{leadCapture ? (
 		<div class="text-left max-w-md mx-auto">

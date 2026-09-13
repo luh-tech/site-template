@@ -70,7 +70,7 @@ if (!Component) {
 }
 ---
 {section.sectionKind === 'cta' ? (
-	<Cta section={section} leadCapture={site?.leadCapture} companyLabel={companyLabel} />
+	<Cta section={section} leadCapture={site?.leadCapture} companyLabel={companyLabel} icons={icons} />
 ) : section.sectionKind === 'article' ? (
 	<Component section={section} icons={icons} tool={tool} toolSubmitEndpoint={toolSubmitEndpoint} route={route} ventureRef={ventureRef} />
 ) : (
