@@ -3,7 +3,7 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { fetchSchema, fetchSupportSchema } from './schemaFetch.js';
 
-const SITE_PIN = '1.0.0';
+const SITE_PIN = '1.1.0';
 
 let validatorPromise: ReturnType<typeof buildValidator> | null = null;
 
