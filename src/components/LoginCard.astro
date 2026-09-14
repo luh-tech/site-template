@@ -1,0 +1,56 @@
+---
+// Reusable "sign in / continue to the app" card -- lifted from Ectropy's
+// own pre-migration login.astro (2026-09-14 mobile-access pass), which
+// had already proven the right shape live: icon circle, clear single
+// CTA, a subtext naming the real destination host so a visitor knows
+// exactly where clicking takes them before they click. Generalized here
+// so any venture with a real live product (not every venture has one
+// yet) gets the same card instead of reinventing it, matching this
+// template's own "one component, every site" pattern for the nav fix.
+//
+// This card does NOT perform authentication itself -- it's a branded
+// hand-off to wherever the venture's real app/login lives (a different
+// origin almost always, so the actual OAuth/session exchange has to
+// happen there regardless). Sites without a live product don't render
+// this at all.
+import Icon from './Icon.astro';
+
+export interface Props {
+	logoSrc: string;
+	logoAlt: string;
+	heading?: string;
+	subheading?: string;
+	ctaLabel: string;
+	ctaHref: string;
+	ctaSubtext?: string;
+}
+const {
+	logoSrc,
+	logoAlt,
+	heading = 'Sign in',
+	subheading,
+	ctaLabel,
+	ctaHref,
+	ctaSubtext,
+} = Astro.props;
+---
+<section class="flex flex-col items-center text-center">
+	<h1 class="font-display text-3xl font-bold mb-2">{heading}</h1>
+	{subheading && (
+		<p class="opacity-80 max-w-md mb-10" data-reveal>{subheading}</p>
+	)}
+	<a
+		href={ctaHref}
+		class="flex flex-col items-center gap-3 p-8 rounded-lg border border-accent-primary/40 bg-accent-primary/5 hover:border-accent-primary/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 max-w-xs w-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary"
+		data-reveal
+	>
+		<span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-accent-primary text-canvas overflow-hidden">
+			<img src={logoSrc} alt={logoAlt} class="w-6 h-6" />
+		</span>
+		<div class="font-display text-lg font-semibold inline-flex items-center gap-1.5">
+			{ctaLabel}
+			<Icon name="external-link" class="w-3.5 h-3.5 opacity-50" />
+		</div>
+		{ctaSubtext && <p class="text-xs font-mono opacity-50">{ctaSubtext}</p>}
+	</a>
+</section>

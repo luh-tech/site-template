@@ -10,6 +10,7 @@
 // before this component ever renders.
 import type { LoadedPage } from '../content/loadPage.js';
 import type { LoadedSite } from '../content/loadSite.js';
+import Icon from '../components/Icon.astro';
 
 export interface Props {
 	site: LoadedSite;
@@ -25,12 +26,22 @@ const footer = site.footer as { legalLine: string; parentHref?: string };
 // remembering to, and skips it if the instance already carries it (fixes
 // the Replique regression where this link was missing entirely).
 const HOLDING_NAV_ITEM = { label: 'LuhTech Holdings', href: 'https://luh.tech' };
-const rawNav = site.nav as Array<{ label: string; href: string }>;
+const rawNav = site.nav as Array<{ label: string; href: string; cta?: boolean }>;
 const ventureRef = site.ventureRef as string | undefined;
 const nav =
   ventureRef && ventureRef !== 'luhtech-business' && !rawNav.some((item) => item.href === HOLDING_NAV_ITEM.href)
     ? [...rawNav, HOLDING_NAV_ITEM]
     : rawNav;
+
+// content/site.schema.json v1.1.0: nav[].cta marks the one item (a real
+// live product's sign-in URL, already legal as a full https:// href)
+// that renders as a distinct bordered button instead of a plain link --
+// proven live on Ectropy's own pre-migration login.astro before this was
+// generalized. At most one; if an instance ever marks more than one,
+// the first wins and the rest render as plain links rather than the
+// build silently producing several competing buttons.
+const ctaItem = nav.find((item) => item.cta);
+const linkItems = nav.filter((item) => item !== ctaItem);
 ---
 <html lang="en" class="no-js">
 	<head>
@@ -67,34 +78,51 @@ const nav =
 				<a href="/" class="flex items-center gap-2 font-display font-semibold tracking-tight transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:rounded">
 					<slot name="logo" />
 				</a>
-				<ul class="hidden md:flex items-center gap-6 text-sm">
-					{nav.map((item) => (
-						<li><a href={item.href} class="hover:text-accent-primary transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:rounded">{item.label}</a></li>
-					))}
-				</ul>
-				<!-- Mobile nav trigger -- below md (768px, same breakpoint every
-				     other responsive class in this file/the wider LuhTech
-				     dashboard already uses). The nav's own natural width (a
-				     typical 7-8 item venture nav, ~585-590px) exceeds every
-				     phone viewport with nothing to wrap or collapse it, which
-				     forced the WHOLE PAGE to that wider layout width on mobile
-				     (confirmed live via screenshot on ectropy.ai, 2026-09-14) --
-				     not a per-page bug, a per-nav one, hence the fix living
-				     here once rather than on every page. -->
-				<button
-					type="button"
-					id="nav-toggle"
-					aria-expanded="false"
-					aria-controls="mobile-nav-panel"
-					aria-label="Open navigation"
-					class="md:hidden flex items-center justify-center w-9 h-9 -mr-2 rounded-md hover:bg-canvas/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary"
-				>
-					<svg id="nav-icon-open" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
-					<svg id="nav-icon-close" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="6" y1="18" x2="18" y2="6"></line></svg>
-				</button>
+				<div class="flex items-center gap-4">
+					<ul class="hidden md:flex items-center gap-6 text-sm">
+						{linkItems.map((item) => (
+							<li><a href={item.href} class="hover:text-accent-primary transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:rounded">{item.label}</a></li>
+						))}
+					</ul>
+					<!-- The sign-in CTA (when present) stays visible at every
+					     width, mobile included -- it's the one thing worth never
+					     hiding behind the hamburger, matching what was already
+					     true (if unintentionally, since nothing collapsed at
+					     all) on Ectropy's own pre-migration login.astro nav. -->
+					{ctaItem && (
+						<a
+							href={ctaItem.href}
+							class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-canvas/30 hover:border-canvas/60 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-secondary focus-visible:rounded text-sm"
+						>
+							<Icon name="lock" class="w-3.5 h-3.5" />
+							{ctaItem.label}
+						</a>
+					)}
+					<!-- Mobile nav trigger -- below md (768px, same breakpoint
+					     every other responsive class in this file/the wider
+					     LuhTech dashboard already uses). The nav's own natural
+					     width (a typical 7-8 item venture nav, ~585-590px)
+					     exceeds every phone viewport with nothing to wrap or
+					     collapse it, which forced the WHOLE PAGE to that wider
+					     layout width on mobile (confirmed live via screenshot
+					     on ectropy.ai, 2026-09-14) -- not a per-page bug, a
+					     per-nav one, hence the fix living here once rather
+					     than on every page. -->
+					<button
+						type="button"
+						id="nav-toggle"
+						aria-expanded="false"
+						aria-controls="mobile-nav-panel"
+						aria-label="Open navigation"
+						class="md:hidden flex items-center justify-center w-9 h-9 rounded-md hover:bg-canvas/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary"
+					>
+						<svg id="nav-icon-open" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
+						<svg id="nav-icon-close" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="6" y1="18" x2="18" y2="6"></line></svg>
+					</button>
+				</div>
 			</nav>
 			<ul id="mobile-nav-panel" class="hidden md:hidden gap-1 px-6 pb-4 text-sm">
-				{nav.map((item) => (
+				{linkItems.map((item) => (
 					<li><a href={item.href} class="block py-2 hover:text-accent-primary transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:rounded">{item.label}</a></li>
 				))}
 			</ul>
