@@ -67,12 +67,37 @@ const nav =
 				<a href="/" class="flex items-center gap-2 font-display font-semibold tracking-tight transition-opacity hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:rounded">
 					<slot name="logo" />
 				</a>
-				<ul class="flex items-center gap-6 text-sm">
+				<ul class="hidden md:flex items-center gap-6 text-sm">
 					{nav.map((item) => (
 						<li><a href={item.href} class="hover:text-accent-primary transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:rounded">{item.label}</a></li>
 					))}
 				</ul>
+				<!-- Mobile nav trigger -- below md (768px, same breakpoint every
+				     other responsive class in this file/the wider LuhTech
+				     dashboard already uses). The nav's own natural width (a
+				     typical 7-8 item venture nav, ~585-590px) exceeds every
+				     phone viewport with nothing to wrap or collapse it, which
+				     forced the WHOLE PAGE to that wider layout width on mobile
+				     (confirmed live via screenshot on ectropy.ai, 2026-09-14) --
+				     not a per-page bug, a per-nav one, hence the fix living
+				     here once rather than on every page. -->
+				<button
+					type="button"
+					id="nav-toggle"
+					aria-expanded="false"
+					aria-controls="mobile-nav-panel"
+					aria-label="Open navigation"
+					class="md:hidden flex items-center justify-center w-9 h-9 -mr-2 rounded-md hover:bg-canvas/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary"
+				>
+					<svg id="nav-icon-open" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
+					<svg id="nav-icon-close" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="6" y1="18" x2="18" y2="6"></line></svg>
+				</button>
 			</nav>
+			<ul id="mobile-nav-panel" class="hidden md:hidden gap-1 px-6 pb-4 text-sm">
+				{nav.map((item) => (
+					<li><a href={item.href} class="block py-2 hover:text-accent-primary transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:rounded">{item.label}</a></li>
+				))}
+			</ul>
 		</header>
 		<main id="main-content" class="flex-1 max-w-4xl mx-auto w-full px-6 py-16">
 			<slot />
@@ -86,6 +111,29 @@ const nav =
 			</div>
 		</footer>
 		<script>
+			// Mobile nav toggle. Plain click handler + classList, no
+			// framework/island needed for something this small -- matches
+			// this file's own existing no-js/reveal scripts' own approach.
+			// Navigating away (a real page load, not an SPA route change)
+			// resets this state for free; no pathname-watching needed the
+			// way a persisted SPA sidebar would.
+			const navToggle = document.getElementById('nav-toggle');
+			const navPanel = document.getElementById('mobile-nav-panel');
+			const iconOpen = document.getElementById('nav-icon-open');
+			const iconClose = document.getElementById('nav-icon-close');
+			if (navToggle && navPanel && iconOpen && iconClose) {
+				navToggle.addEventListener('click', () => {
+					const isOpen = navToggle.getAttribute('aria-expanded') === 'true';
+					navToggle.setAttribute('aria-expanded', String(!isOpen));
+					navToggle.setAttribute('aria-label', isOpen ? 'Open navigation' : 'Close navigation');
+					navPanel.classList.toggle('hidden', isOpen);
+					navPanel.classList.toggle('flex', !isOpen);
+					navPanel.classList.toggle('flex-col', !isOpen);
+					iconOpen.classList.toggle('hidden', !isOpen);
+					iconClose.classList.toggle('hidden', isOpen);
+				});
+			}
+
 			// Content already on screen at load must never depend on a scroll
 			// event or an async observer callback to become visible -- real
 			// user report (2026-09-09): the insights index's card grid sits
