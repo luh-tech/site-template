@@ -6,6 +6,7 @@
 import RingComparison from './diagrams/RingComparison.astro';
 import VectorSum from './diagrams/VectorSum.astro';
 import DataLineChart from './diagrams/DataLineChart.astro';
+import ConnectionGraph from './diagrams/ConnectionGraph.astro';
 
 export interface Props {
 	diagram: { diagramId: string; diagramType: string; caption?: string; data: any };
@@ -18,6 +19,9 @@ const { diagram, class: className = 'my-8' } = Astro.props;
 	{diagram.diagramType === 'vector-sum' && <VectorSum rays={diagram.data.rays} />}
 	{diagram.diagramType === 'data-line-chart' && (
 		<DataLineChart points={diagram.data.points} xLabel={diagram.data.xLabel} yLabel={diagram.data.yLabel} annotations={diagram.data.annotations} />
+	)}
+	{diagram.diagramType === 'connection-graph' && (
+		<ConnectionGraph diagramId={diagram.diagramId} nodes={diagram.data.nodes} edges={diagram.data.edges} />
 	)}
 	{diagram.caption && <figcaption class="text-sm text-ink/60 mt-2 text-center">{diagram.caption}</figcaption>}
 </figure>

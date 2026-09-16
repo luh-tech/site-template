@@ -1,0 +1,240 @@
+---
+// d-2026-09-15-eb-platform-page-connection-diagram (C5, canonical-connection
+// arc). A real node-and-edge relationship graph -- "what attaches to what" --
+// distinct from RingComparison/VectorSum/DataLineChart, which all encode a
+// single numeric comparison, not a structural relationship. Computed at
+// build time (Astro frontmatter, server-side), matching RingComparison's
+// own convention: the graph shape is fixed at author time, not user-editable.
+//
+// Layout: a longest-path layered (Sugiyama-style) DAG layout, generic over
+// any real nodes[]/edges[] input -- not hand-tuned to one graph. Self-loops
+// (a node citing itself, e.g. "a decision supersedes a decision") are
+// excluded from layering and drawn as a small loop above the node instead.
+export interface Node {
+	id: string;
+	label: string;
+	sub?: string;
+	hub?: boolean;
+	rail?: boolean;
+}
+export interface Edge {
+	from: string;
+	to: string;
+	label?: string;
+}
+export interface Props {
+	diagramId: string;
+	nodes: Node[];
+	edges: Edge[];
+	class?: string;
+}
+const { diagramId, nodes, edges, class: className = 'w-full h-auto' } = Astro.props;
+
+const selfLoops = edges.filter((e) => e.from === e.to);
+const crossEdges = edges.filter((e) => e.from !== e.to);
+
+// Longest-path layering: layer(n) = 0 if no incoming cross-edge, else
+// 1 + max(layer(source)) over incoming edges. Iterative relaxation with a
+// bounded pass count (nodes.length) makes this safe even if the real data
+// ever contains a longer cycle than a self-loop -- it converges to a stable
+// (if imperfect) layering rather than looping forever.
+const layer = new Map<string, number>(nodes.map((n) => [n.id, 0]));
+for (let pass = 0; pass < nodes.length + 1; pass++) {
+	let changed = false;
+	for (const e of crossEdges) {
+		const want = (layer.get(e.from) ?? 0) + 1;
+		if (want > (layer.get(e.to) ?? 0)) {
+			layer.set(e.to, want);
+			changed = true;
+		}
+	}
+	if (!changed) break;
+}
+
+const maxLayer = Math.max(...Array.from(layer.values()), 0);
+const columns: Node[][] = Array.from({ length: maxLayer + 1 }, () => []);
+for (const n of nodes) columns[layer.get(n.id) ?? 0].push(n);
+
+const NODE_W = 148;
+const NODE_H = 56;
+const ROW_GAP = 28;
+const PAD = 24;
+// COL_GAP must fit the longest cross-column edge label or the label
+// overlaps both the node it leaves and the node it enters -- found live:
+// "resolve to the cells they occupy" (33 chars) collided with both
+// "Elements" and "The place" at a fixed 96px gap. ~5.4px/char is a safe
+// upper-bound width estimate for JetBrains Mono at font-size 9 (no real
+// text-measurement available at build time); same-column (bow) edges and
+// self-loops don't consume COL_GAP, so only cross-column labels count.
+const longestCrossLabel = Math.max(0, ...crossEdges.filter((e) => e.label).map((e) => e.label!.length));
+const COL_GAP = Math.max(96, longestCrossLabel * 5.4 + 24);
+// A node's own label/sub can be wider than NODE_W (centered text overflows
+// evenly on both sides) -- for a node in the first or last column, that
+// overflow can extend past the SVG's own viewBox edge and get clipped by
+// the SVG itself, not just visually crowded. Found live: "Documents"'s sub
+// "RFI · CO · submittal · drawing rev · BCF" (41 chars) overflowed ~36px
+// past NODE_W/2 in column 0, landing at a negative x and losing its
+// leading "RF" off the left edge of the canvas. Same char-width-estimate
+// approach as COL_GAP above: Inter 600 12.5px runs wider per character
+// than JetBrains Mono 9px, so it gets its own (more generous) rate.
+const maxLabelOverflow = Math.max(
+	0,
+	...nodes.map((n) => (n.label.length * 7.3 - NODE_W) / 2),
+	...nodes.map((n) => (n.sub ? (n.sub.length * 5.4 - NODE_W) / 2 : 0)),
+);
+const PAD_X = PAD + Math.ceil(Math.max(0, maxLabelOverflow)) + 8;
+// A self-loop draws its arc above the node and its label above the arc --
+// both need real vertical room, not just PAD, or they render past y=0 and
+// clip outside the viewBox (found live: the decision-supersedes-decision
+// loop landed at y=-8, invisible in the built page). Reserved only when
+// the graph actually has a self-loop, so every other diagram's canvas
+// stays exactly as tight as before.
+const LOOP_ROOM = selfLoops.length > 0 ? 40 : 0;
+const topPad = PAD + LOOP_ROOM;
+
+const maxRows = Math.max(...columns.map((c) => c.length), 1);
+const colHeight = maxRows * NODE_H + (maxRows - 1) * ROW_GAP;
+
+type Placed = Node & { x: number; y: number; cx: number; cy: number };
+const positions = new Map<string, Placed>();
+columns.forEach((col, ci) => {
+	const colH = col.length * NODE_H + (col.length - 1) * ROW_GAP;
+	const yOffset = topPad + (colHeight - colH) / 2;
+	col.forEach((n, ri) => {
+		const x = PAD_X + ci * (NODE_W + COL_GAP);
+		const y = yOffset + ri * (NODE_H + ROW_GAP);
+		positions.set(n.id, { ...n, x, y, cx: x + NODE_W / 2, cy: y + NODE_H / 2 });
+	});
+});
+
+const width = PAD_X * 2 + (maxLayer + 1) * NODE_W + maxLayer * COL_GAP;
+const height = topPad + PAD + colHeight;
+
+// Cubic bezier from the right edge of `from` to the left edge of `to`
+// (forward, cross-column edges), or a vertical bow between two nodes in
+// the same column (a same-layer edge, e.g. cell -> ledger when both land
+// in a late layer) -- a straight line between stacked nodes would pass
+// straight through any node placed between them.
+function edgePath(from: Placed, to: Placed): string {
+	if (from.x === to.x) {
+		const x1 = from.cx + NODE_W / 2 + 2;
+		const y1 = from.cy;
+		const x2 = to.cx + NODE_W / 2 + 2;
+		const y2 = to.cy;
+		const bow = 36;
+		return `M ${x1} ${y1} C ${x1 + bow} ${y1}, ${x2 + bow} ${y2}, ${x2} ${y2}`;
+	}
+	const x1 = from.x + NODE_W;
+	const y1 = from.cy;
+	const x2 = to.x;
+	const y2 = to.cy;
+	const mx = (x1 + x2) / 2;
+	return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+}
+
+const drawnCrossEdges = crossEdges
+	.map((e) => {
+		const from = positions.get(e.from);
+		const to = positions.get(e.to);
+		if (!from || !to) return null;
+		return { ...e, from, to, path: edgePath(from, to) };
+	})
+	.filter((e): e is NonNullable<typeof e> => e !== null);
+
+const drawnSelfLoops = selfLoops
+	.map((e) => {
+		const at = positions.get(e.from);
+		if (!at) return null;
+		const x = at.cx;
+		const yTop = at.y;
+		const r = 16;
+		const path = `M ${x - 10} ${yTop} C ${x - 10} ${yTop - r * 2}, ${x + 10} ${yTop - r * 2}, ${x + 10} ${yTop}`;
+		return { ...e, x, y: yTop - r * 2 - 6, path };
+	})
+	.filter((e): e is NonNullable<typeof e> => e !== null);
+
+const markerId = `cg-arrow-${diagramId}`;
+const ariaLabel = `Connection graph: ${nodes.length} nodes -- ${nodes.map((n) => n.label).join(', ')}. ${edges.length} relationships: ${edges
+	.map((e) => `${nodes.find((n) => n.id === e.from)?.label ?? e.from} to ${nodes.find((n) => n.id === e.to)?.label ?? e.to}${e.label ? ` (${e.label})` : ''}`)
+	.join('; ')}.`;
+---
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+	viewBox={`0 0 ${width} ${height}`}
+	class={className}
+	role="img"
+	aria-label={ariaLabel}
+>
+	<defs>
+		<marker id={markerId} markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+			<path d="M0,0 L0,6 L6,3 z" fill="currentColor" fill-opacity="0.55" />
+		</marker>
+	</defs>
+
+	{drawnCrossEdges.map((e) => (
+		<g class="text-ink/50">
+			<path d={e.path} fill="none" stroke="currentColor" stroke-width="1.25" stroke-opacity="0.4" marker-end={`url(#${markerId})`} />
+			{e.label && (
+				<text
+					x={(e.from.x + NODE_W + e.to.x) / 2}
+					y={(e.from.cy + e.to.cy) / 2 - 5}
+					text-anchor="middle"
+					font-family="JetBrains Mono, monospace"
+					font-size="9"
+					fill="currentColor"
+					fill-opacity="0.65"
+				>{e.label}</text>
+			)}
+		</g>
+	))}
+
+	{drawnSelfLoops.map((e) => (
+		<g class="text-ink/50">
+			<path d={e.path} fill="none" stroke="currentColor" stroke-width="1.25" stroke-opacity="0.4" marker-end={`url(#${markerId})`} />
+			{e.label && (
+				<text x={e.x} y={e.y - 5} text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="currentColor" fill-opacity="0.65">{e.label}</text>
+			)}
+		</g>
+	))}
+
+	{Array.from(positions.values()).map((n) => (
+		<g>
+			<rect
+				x={n.x}
+				y={n.y}
+				width={NODE_W}
+				height={NODE_H}
+				rx={n.rail ? 6 : 10}
+				class={n.hub ? 'text-accent-primary' : 'text-ink'}
+				fill="currentColor"
+				fill-opacity={n.hub ? 0.14 : 0.04}
+				stroke="currentColor"
+				stroke-opacity={n.hub ? 0.7 : 0.35}
+				stroke-width={n.hub ? 2 : 1.25}
+				stroke-dasharray={n.rail ? '3 3' : undefined}
+			/>
+			<text
+				x={n.cx}
+				y={n.sub ? n.cy - 5 : n.cy + 4}
+				text-anchor="middle"
+				font-family="Inter, sans-serif"
+				font-weight="600"
+				font-size="12.5"
+				fill="currentColor"
+				class="text-ink"
+			>{n.label}</text>
+			{n.sub && (
+				<text
+					x={n.cx}
+					y={n.cy + 13}
+					text-anchor="middle"
+					font-family="JetBrains Mono, monospace"
+					font-size="9"
+					fill="currentColor"
+					fill-opacity="0.55"
+					class="text-ink"
+				>{n.sub}</text>
+			)}
+		</g>
+	))}
+</svg>
