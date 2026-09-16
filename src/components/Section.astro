@@ -62,8 +62,14 @@ export interface Props {
 	toolSubmitEndpoint?: string;
 	route?: string;
 	ventureRef?: string;
+	// d-2026-09-16-bt-article-section-split: which heading level THIS
+	// article-kind section renders at -- a page can now carry several in
+	// sequence (one per real sub-heading the source article had), and only
+	// the first is the page's real H1. Same passthrough shape as the
+	// tool-related props above; every other sectionKind ignores it.
+	headingLevel?: 'h1' | 'h2';
 }
-const { section, site, companyLabel, icons, tool, toolSubmitEndpoint, route, ventureRef } = Astro.props;
+const { section, site, companyLabel, icons, tool, toolSubmitEndpoint, route, ventureRef, headingLevel } = Astro.props;
 const Component = SECTION_COMPONENTS[section.sectionKind];
 if (!Component) {
 	throw new Error(`Section.astro: unknown sectionKind "${section.sectionKind}" (id: ${section.sectionId})`);
@@ -72,7 +78,7 @@ if (!Component) {
 {section.sectionKind === 'cta' ? (
 	<Cta section={section} leadCapture={site?.leadCapture} companyLabel={companyLabel} icons={icons} />
 ) : section.sectionKind === 'article' ? (
-	<Component section={section} icons={icons} tool={tool} toolSubmitEndpoint={toolSubmitEndpoint} route={route} ventureRef={ventureRef} />
+	<Component section={section} icons={icons} tool={tool} toolSubmitEndpoint={toolSubmitEndpoint} route={route} ventureRef={ventureRef} headingLevel={headingLevel} />
 ) : (
 	<Component section={section} icons={icons} />
 )}
