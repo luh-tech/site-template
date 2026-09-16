@@ -31,6 +31,7 @@
 // small external-link marker, the "nice links" treatment.
 import Diagram from './Diagram.astro';
 import Icon from './Icon.astro';
+import { formatInlineMarkdown } from '../lib/formatInlineMarkdown';
 
 export interface Props {
 	block: { blockType: string; text?: string; label?: string; href?: string; diagramId?: string; src?: string; alt?: string; caption?: string; name?: string; title?: string };
@@ -41,6 +42,11 @@ export interface Props {
 }
 const { block, diagrams = [], class: className = '' } = Astro.props;
 const items = block.blockType === 'list' ? (block.text ?? '').split('\n').filter(Boolean) : [];
+// d-2026-09-16-sr-inline-markdown-rendering: every text-bearing block type
+// gets real **bold**/_italic_/[link](url) rendering instead of literal
+// markdown characters -- see formatInlineMarkdown's own doc comment for
+// the real live bug this closes.
+const text = block.text ? formatInlineMarkdown(block.text) : '';
 const isExternalLink = typeof block.href === 'string' && block.href.startsWith('https://');
 const Wrapper = block.href ? 'a' : Fragment;
 const wrapperProps = block.href
@@ -62,33 +68,33 @@ if (block.blockType === 'diagram') {
 {block.blockType === 'paragraph' && (
 	<div class={className}>
 		{block.label && <p class="font-display font-semibold text-accent-secondary mb-1">{block.label}</p>}
-		<p class="leading-relaxed">{block.text}</p>
+		<p class="leading-relaxed" set:html={text} />
 	</div>
 )}
-{block.blockType === 'lede' && <p class={`text-lg leading-relaxed ${className}`}>{block.text}</p>}
+{block.blockType === 'lede' && <p class={`text-lg leading-relaxed ${className}`} set:html={text} />}
 {block.blockType === 'pullquote' && (
-	<blockquote class={`border-l-4 border-accent-primary pl-4 italic text-lg ${className}`}>{block.text}</blockquote>
+	<blockquote class={`border-l-4 border-accent-primary pl-4 italic text-lg ${className}`} set:html={text} />
 )}
 {block.blockType === 'definition' && (
 	<div class={className}>
 		{block.label && <dt class="font-semibold">{block.label}</dt>}
-		<dd class="leading-relaxed">{block.text}</dd>
+		<dd class="leading-relaxed" set:html={text} />
 	</div>
 )}
-{block.blockType === 'caption' && <p class={`text-sm text-ink/60 ${className}`}>{block.text}</p>}
+{block.blockType === 'caption' && <p class={`text-sm text-ink/60 ${className}`} set:html={text} />}
 {block.blockType === 'list' && (
 	<div class={className}>
 		{block.label && <p class="font-display font-semibold mb-1">{block.label}</p>}
 		<ul class="list-disc list-inside space-y-1">
-			{items.map((item) => <li>{item}</li>)}
+			{items.map((item) => <li set:html={formatInlineMarkdown(item)} />)}
 		</ul>
 	</div>
 )}
 {block.blockType === 'stat' && (
-	<p class={`font-display text-xl font-semibold text-accent-primary bg-accent-primary/5 rounded-md px-4 py-3 ${className}`}>{block.text}</p>
+	<p class={`font-display text-xl font-semibold text-accent-primary bg-accent-primary/5 rounded-md px-4 py-3 ${className}`} set:html={text} />
 )}
 {block.blockType === 'close' && (
-	<p class={`leading-relaxed border-t border-ink/10 pt-6 ${className}`}>{block.text}</p>
+	<p class={`leading-relaxed border-t border-ink/10 pt-6 ${className}`} set:html={text} />
 )}
 {block.blockType === 'diagram' && resolvedDiagram && <Diagram diagram={resolvedDiagram} class={`my-8 ${className}`} />}
 {block.blockType === 'image' && (
@@ -111,7 +117,7 @@ if (block.blockType === 'diagram') {
 				{block.title && <p class="text-sm text-accent-secondary font-mono uppercase tracking-wide">{block.title}</p>}
 			</div>
 		</div>
-		<p class="text-sm text-ink/80 leading-relaxed">{block.text}</p>
+		<p class="text-sm text-ink/80 leading-relaxed" set:html={text} />
 	</div>
 )}
 {isExternalLink && (

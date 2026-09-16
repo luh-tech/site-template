@@ -30,18 +30,27 @@ export interface Props {
 	toolSubmitEndpoint?: string;
 	route?: string;
 	ventureRef?: string;
+	// d-2026-09-16-bt-article-section-split: an article bridged onto a page
+	// now lands as MULTIPLE sectionKind:"article" entries (one per real
+	// ## heading the source article's ::section chunks carried, previously
+	// flattened into one giant section's blocks[] -- see venture_site.py's
+	// own history for why). Only the page's own title section is the real
+	// H1; every subsequent article section is a real H2 under it. Defaults
+	// to 'h1' so a genuinely single-section article page (or any other
+	// caller from before this split existed) renders exactly as before.
+	headingLevel?: 'h1' | 'h2';
 }
-const { section, tool, toolSubmitEndpoint, route, ventureRef } = Astro.props;
+const { section, tool, toolSubmitEndpoint, route, ventureRef, headingLevel = 'h1' } = Astro.props;
 const referencedDiagramIds = new Set((section.blocks ?? []).filter((b: any) => b.blockType === 'diagram').map((b: any) => b.diagramId));
 const unreferencedDiagrams = (section.diagrams ?? []).filter((d: any) => !referencedDiagramIds.has(d.diagramId));
 ---
 <section id={section.sectionId} class="py-8" data-reveal>
 	<SectionHeading
-		level="h1"
+		level={headingLevel}
 		eyebrow={section.eyebrow}
 		heading={section.heading}
 		subheading={section.subheading}
-		headingClass="text-3xl sm:text-4xl"
+		headingClass={headingLevel === 'h1' ? 'text-3xl sm:text-4xl' : 'text-2xl sm:text-3xl'}
 		subheadingClass="text-lg"
 		class="mb-3 max-w-2xl"
 	/>
