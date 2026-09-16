@@ -8,15 +8,32 @@
 // silently. Same fix shape as Section.astro's own crossLinks[] fix
 // (see that file's comment): a documented, schema-legal mechanism that
 // one section-kind component had quietly never wired up.
+//
+// diagrams pass-through (d-2026-09-15-eb-platform-page-connection-diagram,
+// C5 of canonical-connection): Article.astro already passes section.diagrams
+// into Block (and renders any diagram not referenced by a block, in its own
+// fallback strip) -- Approach.astro never did either, so a page.schema.json
+// mustCarry:"diagram" approach section (e.g. page-platform.json's own
+// template) crashed the build the moment it actually carried one: Block.astro
+// throws when a diagram-type block's diagramId can't resolve against an
+// empty diagrams[] default. Same fix, same fallback-strip shape as Article.astro.
 import Block from '../Block.astro';
+import Diagram from '../Diagram.astro';
 import SectionHeading from '../SectionHeading.astro';
 import type { SectionIcons } from '../Section.astro';
 
 export interface Props { section: any; icons?: SectionIcons }
 const { section, icons } = Astro.props;
 const sectionIcon = icons?.section?.[section.sectionId];
+const referencedDiagramIds = new Set((section.blocks ?? []).filter((b: any) => b.blockType === 'diagram').map((b: any) => b.diagramId));
+const unreferencedDiagrams = (section.diagrams ?? []).filter((d: any) => !referencedDiagramIds.has(d.diagramId));
 ---
 <section id={section.sectionId} class="py-8" data-reveal>
 	<SectionHeading eyebrow={section.eyebrow} heading={section.heading} subheading={section.subheading} icon={sectionIcon} />
-	{section.blocks?.map((b: any) => <Block block={b} class="mb-3" />)}
+	{section.blocks?.map((b: any) => <Block block={b} diagrams={section.diagrams} class="mb-3" />)}
+	{unreferencedDiagrams.length > 0 && (
+		<div class="space-y-8 mt-8">
+			{unreferencedDiagrams.map((d: any) => <Diagram diagram={d} />)}
+		</div>
+	)}
 </section>
