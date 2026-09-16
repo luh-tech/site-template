@@ -12,7 +12,7 @@ async function buildValidator() {
   const ajv = new Ajv({ strict: false, allErrors: true });
   addFormats(ajv);
 
-  const [pageSchema, capabilityClaimSchema, cellSchema, definitionsSchema, graphSchema, ventureEnum] =
+  const [pageSchema, capabilityClaimSchema, cellSchema, definitionsSchema, graphSchema, ventureEnum, contentSpineSchema] =
     await Promise.all([
       fetchSchema('content/page.schema.json', PAGE_PIN),
       fetchSchema('content/capability-claim.schema.json', CAPABILITY_CLAIM_PIN),
@@ -20,6 +20,11 @@ async function buildValidator() {
       fetchSupportSchema('_definitions/definitions.schema.json'),
       fetchSupportSchema('_definitions/graph.schema.json'),
       fetchSupportSchema('_enums/venture.enum.json'),
+      // page.schema.json v2.0.0 (content-spine adoption) $refs this for
+      // publishRecordRefs/themeRefs/strategyRef/producedBy -- missing here
+      // until now because PAGE_PIN itself couldn't move past v1.4.0 (see
+      // this same PR's own PAGE_PIN fix) to ever need it.
+      fetchSupportSchema('_definitions/content-spine.schema.json'),
     ]);
 
   ajv.addSchema(capabilityClaimSchema as object);
@@ -27,6 +32,7 @@ async function buildValidator() {
   ajv.addSchema(definitionsSchema as object);
   ajv.addSchema(graphSchema as object);
   ajv.addSchema(ventureEnum as object);
+  ajv.addSchema(contentSpineSchema as object);
 
   return ajv.compile(pageSchema as object);
 }
