@@ -14,6 +14,11 @@
  *
  * Usage: luhtech-page-lexicon <path-to-page.json> <path-to-brand-identity.json> [path-to-luhtech-business-brand-identity.json]
  * Exit 0: clean. Exit 1: any prohibited term found, reported per field.
+ *
+ * Superseded for CI by the Vale package schema-registry generates from the
+ * brand-identity instances (tools/lexicon_vale.py -- one engine that also
+ * carries spellings, glosses and prohibitedPatterns, which this bin does
+ * not). Kept for local use; it reads surface-scoped items (v1.4.0+).
  */
 import { readFileSync } from 'node:fs';
 
@@ -73,10 +78,21 @@ export function collectTextFields(page) {
  * its own name constantly (seo.title alone guarantees it); that must never
  * be a violation regardless of which source list it came from.
  */
+/**
+ * brand-identity v1.4.0+: a prohibited[] item is a bare string (every
+ * surface) or {term, surfaces[]} (only the listed surfaces). This bin checks
+ * pages, so it keeps bare strings and items whose surfaces include "page".
+ */
+export function pageTerms(prohibited) {
+  return (prohibited ?? [])
+    .filter((item) => typeof item === 'string' || (item?.term && (item.surfaces ?? []).includes('page')))
+    .map((item) => (typeof item === 'string' ? item : item.term));
+}
+
 export function buildProhibitedTerms(brand, luhtechBrand) {
   const terms = new Set([
-    ...(brand.voice?.lexicon?.prohibited ?? []),
-    ...(luhtechBrand?.voice?.lexicon?.prohibited ?? []),
+    ...pageTerms(brand.voice?.lexicon?.prohibited),
+    ...pageTerms(luhtechBrand?.voice?.lexicon?.prohibited),
   ]);
   const ownNames = [brand.brandId, brand.identity?.name].filter(Boolean);
   for (const own of ownNames) {

@@ -56,3 +56,21 @@ test('collectTextFields: excludes crossLinks relationshipLine (the schema-legal 
   const paths = fields.map((f) => f.path);
   assert.ok(!paths.some((p) => p.includes('crossLinks')), 'crossLinks fields must never be collected for lexicon checking');
 });
+
+test('buildProhibitedTerms: brand-identity v1.4.0+ surface-scoped items -- page-scoped kept, deck-only dropped', () => {
+  const brand = { brandId: 'qullqa', voice: { lexicon: { prohibited: [] } } };
+  const luhtech = {
+    voice: {
+      lexicon: {
+        prohibited: [
+          'fork',
+          { term: 'Ectropy', surfaces: ['page'] },
+          { term: 'pilot', surfaces: ['page', 'article', 'social'] },
+          { term: 'deck-only term', surfaces: ['deck'] },
+        ],
+      },
+    },
+  };
+  const terms = buildProhibitedTerms(brand, luhtech);
+  assert.deepEqual([...terms].sort(), ['Ectropy', 'fork', 'pilot']);
+});
