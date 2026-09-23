@@ -3,7 +3,9 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { fetchSchema, fetchSupportSchema } from './schemaFetch.js';
 
-const BRAND_PIN = '1.3.0';
+// 1.5.0: voice.lexicon spellings/glosses/prohibitedPatterns and surface-scoped
+// prohibited items (additive -- every 1.3.0 instance validates unchanged).
+const BRAND_PIN = '1.5.0';
 
 let validatorPromise: ReturnType<typeof buildValidator> | null = null;
 
