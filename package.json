@@ -1,6 +1,6 @@
 {
   "name": "@luhtech/site-template",
-  "version": "0.14.8",
+  "version": "0.15.0",
   "description": "Shared Astro component library + content-instance contract for LuhTech venture marketing sites -- one template renders every site from content/page.schema.json + content/site.schema.json instances.",
   "type": "module",
   "license": "Apache-2.0",
@@ -32,7 +32,9 @@
     "luhtech-page-claims": "bin/luhtech-page-claims.mjs",
     "luhtech-sync-marks": "bin/luhtech-sync-marks.mjs",
     "luhtech-sync-animated-marks": "bin/luhtech-sync-animated-marks.mjs",
-    "luhtech-sync-venture-directory": "bin/luhtech-sync-venture-directory.mjs"
+    "luhtech-sync-venture-directory": "bin/luhtech-sync-venture-directory.mjs",
+    "luhtech-sync-icons": "bin/luhtech-sync-icons.mjs",
+    "luhtech-seo-check": "bin/luhtech-seo-check.mjs"
   },
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.mjs"
@@ -43,6 +45,7 @@
   },
   "dependencies": {
     "@lucide/astro": "^1.42.0",
+    "@resvg/resvg-js": "^2.6.2",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1"
   },
