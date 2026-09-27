@@ -336,6 +336,40 @@ A `tsconfig.json` was added (this repo had none) extending
 diagnostics across `ToolCalculator.astro` and the diagram components that
 the repo's prior no-tsconfig default resolution wasn't catching.
 
+## Browser icons, canonical URLs and search metadata (0.15.0)
+
+`SiteLayout` now emits, beyond `page.seo`'s title/description/ogImage:
+
+- `<link rel="canonical">` and `og:url`, from the site's `astro.config`
+  `site` plus the page path (nothing is emitted if `site` is unset);
+- `og:locale` (`en_US`), and -- when the page passes `brand={brand}` --
+  `og:site_name` (`brand.identity.name`) and `theme-color`
+  (`brand.color.foundation.ink.hex`, the header colour);
+- icon and manifest links for whichever of `favicon.svg`,
+  `icon-192.png`, `apple-touch-icon.png` and `site.webmanifest` exist in
+  the site's `public/`. A file that is not there gets no link, so nothing
+  dangles before a site has generated its icons.
+
+`brand` is optional, so existing pages keep building unchanged; pass it
+wherever the page already calls `loadBrand()`:
+
+```astro
+<SiteLayout site={site} page={page} brand={brand}>
+```
+
+Two bins go with it:
+
+- **`luhtech-sync-icons <brand.json> [--public <dir>] [--check]`** renders
+  `public/favicon.svg` to `apple-touch-icon.png` (180px, on the brand
+  canvas colour), `icon-192.png` and `icon-512.png`, and writes
+  `site.webmanifest` from the brand's name and colours. Commit the output;
+  `--check` exits 1 if any of it is missing or stale.
+- **`luhtech-seo-check [dist]`** checks every built page after
+  `astro build`. Errors (exit 1): no title, description, canonical, icon
+  link, `og:image` or `<html lang>`. Warnings: title over 60 characters,
+  description outside 70-160, anything but one `<h1>` -- those are content
+  edits, reported rather than blocking.
+
 ## Migrating a venture site
 
 A migration is: author `content/site.<venture>.json` + `content/pages/*.json`
