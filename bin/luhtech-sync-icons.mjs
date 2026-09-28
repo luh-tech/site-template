@@ -8,6 +8,8 @@
  *   icon-192.png          192x192, transparent
  *   icon-512.png          512x512, transparent
  *   site.webmanifest      name, short_name, icons, theme/background colour
+ *   favicon.ico           16, 32 and 48px, transparent -- browsers and crawlers
+ *                         request /favicon.ico whatever the page links
  *
  * SiteLayout links each of these only when the file exists, so running
  * this is what turns them on for a site. Re-run when favicon.svg or the
@@ -59,6 +61,34 @@ export function paddedSvg(svg, background, padding = APPLE_PADDING) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="${background}"/>${inner}</svg>`;
 }
 
+export const ICO_SIZES = [16, 32, 48];
+
+// An ICO file holding PNG images (supported by every current browser and
+// by Windows since Vista): a 6-byte header, one 16-byte directory entry
+// per image, then the PNG bytes themselves.
+export function buildIco(pngs) {
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0); // reserved
+  header.writeUInt16LE(1, 2); // type: icon
+  header.writeUInt16LE(pngs.length, 4);
+  const entries = [];
+  let offset = 6 + 16 * pngs.length;
+  for (const { size, data } of pngs) {
+    const e = Buffer.alloc(16);
+    e.writeUInt8(size >= 256 ? 0 : size, 0); // width (0 means 256)
+    e.writeUInt8(size >= 256 ? 0 : size, 1); // height
+    e.writeUInt8(0, 2); // palette colours
+    e.writeUInt8(0, 3); // reserved
+    e.writeUInt16LE(1, 4); // colour planes
+    e.writeUInt16LE(32, 6); // bits per pixel
+    e.writeUInt32LE(data.length, 8);
+    e.writeUInt32LE(offset, 12);
+    entries.push(e);
+    offset += data.length;
+  }
+  return Buffer.concat([header, ...entries, ...pngs.map((p) => p.data)]);
+}
+
 async function render(svg, size) {
   const { Resvg } = await import('@resvg/resvg-js');
   return new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng();
@@ -88,6 +118,7 @@ async function main() {
     ['icon-192.png', await render(svg, 192)],
     ['icon-512.png', await render(svg, 512)],
     ['site.webmanifest', Buffer.from(buildManifest(brand))],
+    ['favicon.ico', buildIco(await Promise.all(ICO_SIZES.map(async (size) => ({ size, data: await render(svg, size) }))))],
   ];
 
   let stale = 0;

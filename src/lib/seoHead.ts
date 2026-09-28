@@ -17,6 +17,9 @@ export const ICON_FILES = {
   manifest: 'site.webmanifest',
 } as const;
 
+// favicon.ico is generated too (luhtech-sync-icons) but never linked:
+// browsers and crawlers request /favicon.ico on their own.
+
 export type IconFile = (typeof ICON_FILES)[keyof typeof ICON_FILES];
 
 export interface BrandLike {

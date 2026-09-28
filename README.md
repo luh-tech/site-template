@@ -361,8 +361,10 @@ Two bins go with it:
 
 - **`luhtech-sync-icons <brand.json> [--public <dir>] [--check]`** renders
   `public/favicon.svg` to `apple-touch-icon.png` (180px, on the brand
-  canvas colour), `icon-192.png` and `icon-512.png`, and writes
-  `site.webmanifest` from the brand's name and colours. Commit the output;
+  canvas colour), `icon-192.png`, `icon-512.png` and `favicon.ico`
+  (16/32/48px -- never linked, but browsers and crawlers request it on
+  their own; 0.15.1), and writes `site.webmanifest` from the brand's name
+  and colours. Commit the output;
   `--check` exits 1 if any of it is missing or stale.
 - **`luhtech-seo-check [dist]`** checks every built page after
   `astro build`. Errors (exit 1): no title, description, canonical, icon

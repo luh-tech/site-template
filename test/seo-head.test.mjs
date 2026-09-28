@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildSeoHead, canonicalUrl, ICON_FILES } from '../src/lib/seoHead.ts';
 import { checkHtml } from '../bin/luhtech-seo-check.mjs';
-import { buildManifest, paddedSvg } from '../bin/luhtech-sync-icons.mjs';
+import { buildManifest, paddedSvg, buildIco } from '../bin/luhtech-sync-icons.mjs';
 
 const BRAND = {
   identity: { name: 'Hilja' },
@@ -80,4 +80,24 @@ test('paddedSvg nests the mark inside a filled, padded square', () => {
   assert.match(out, /x="12.500" y="12.500" width="75.000" height="75.000"/);
   assert.doesNotMatch(out, /width="32"/);
   assert.throws(() => paddedSvg('<svg><rect/></svg>', '#fff'), /viewBox/);
+});
+
+test('buildIco writes a valid ICO directory pointing at each PNG', () => {
+  const a = Buffer.from([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]);
+  const b = Buffer.from([0x89, 0x50, 0x4e, 0x47, 4, 5, 6, 7, 8]);
+  const ico = buildIco([{ size: 16, data: a }, { size: 32, data: b }]);
+  assert.equal(ico.readUInt16LE(0), 0);
+  assert.equal(ico.readUInt16LE(2), 1);
+  assert.equal(ico.readUInt16LE(4), 2);
+  // entry 1: 16x16, 32bpp, size and offset of the first PNG
+  assert.equal(ico.readUInt8(6), 16);
+  assert.equal(ico.readUInt16LE(6 + 6), 32);
+  assert.equal(ico.readUInt32LE(6 + 8), a.length);
+  assert.equal(ico.readUInt32LE(6 + 12), 6 + 32);
+  // entry 2 follows the first image
+  assert.equal(ico.readUInt8(22), 32);
+  assert.equal(ico.readUInt32LE(22 + 12), 6 + 32 + a.length);
+  assert.deepEqual(ico.subarray(6 + 32 + a.length), b);
+  // 256 is encoded as 0
+  assert.equal(buildIco([{ size: 256, data: a }]).readUInt8(6), 0);
 });
