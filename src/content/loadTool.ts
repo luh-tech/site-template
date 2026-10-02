@@ -4,6 +4,7 @@ import addFormats from 'ajv-formats';
 import { fetchSchema, fetchSupportSchema } from './schemaFetch.js';
 
 const TOOL_PIN = '1.2.0';
+const CAPABILITY_CLAIM_PIN = '0.2.0';
 
 let validatorPromise: ReturnType<typeof buildValidator> | null = null;
 
@@ -11,14 +12,28 @@ async function buildValidator() {
   const ajv = new Ajv({ strict: false, allErrors: true });
   addFormats(ajv);
 
-  const [toolSchema, definitionsSchema, graphSchema] = await Promise.all([
-    fetchSchema('content/tool.schema.json', TOOL_PIN),
-    fetchSupportSchema('_definitions/definitions.schema.json'),
-    fetchSupportSchema('_definitions/graph.schema.json'),
-  ]);
+  // tool.schema.json 1.2.0 adopts the content spine (cell refs, themes,
+  // strategy) and forbids audit-paint field names, so its $ref chain now
+  // reaches cell, content-spine (which itself $refs capability-claim) and
+  // forbidden-audit-paint-names -- found building LuhTech-Business's /tools/
+  // route against the 1.2.0 pin, which failed "can't resolve reference".
+  const [toolSchema, capabilityClaimSchema, definitionsSchema, graphSchema, cellSchema, contentSpineSchema, forbiddenNamesSchema] =
+    await Promise.all([
+      fetchSchema('content/tool.schema.json', TOOL_PIN),
+      fetchSchema('content/capability-claim.schema.json', CAPABILITY_CLAIM_PIN),
+      fetchSupportSchema('_definitions/definitions.schema.json'),
+      fetchSupportSchema('_definitions/graph.schema.json'),
+      fetchSupportSchema('_definitions/cell.schema.json'),
+      fetchSupportSchema('_definitions/content-spine.schema.json'),
+      fetchSupportSchema('_definitions/forbidden-audit-paint-names.schema.json'),
+    ]);
 
+  ajv.addSchema(capabilityClaimSchema as object);
   ajv.addSchema(definitionsSchema as object);
   ajv.addSchema(graphSchema as object);
+  ajv.addSchema(cellSchema as object);
+  ajv.addSchema(contentSpineSchema as object);
+  ajv.addSchema(forbiddenNamesSchema as object);
 
   return ajv.compile(toolSchema as object);
 }
