@@ -1,0 +1,133 @@
+---
+// d-2026-10-01-st-asset-request-form. The gated asset form a cta section
+// renders when it carries assetRequest (page.schema.json v2.5.0): name, work
+// email, company, role and one unticked series opt-in, posted to the capture
+// service (site.leadCapture.assetRequestEndpoint, site.schema.json v1.3.0).
+// The capture service emails a seven-day link; this page only ever shows a
+// confirmation -- it never receives, renders or links the asset itself.
+//
+// An optional "discuss this with us" box, with the page's requestPrompt as
+// its question, also submits a request (request.submitted: an Opportunity).
+// Same anti-bot controls as LeadCaptureForm: a CSS-hidden honeypot and a
+// minimum time-to-submit.
+import { PERSONAS } from '../lib/assetRequest.ts';
+
+export interface Props {
+	assetRequest: { assetRef: string; requestPrompt?: string };
+	leadCapture: { assetRequestEndpoint: string; honeypotField: string; minSubmitMs?: number; ventureField?: string };
+}
+const { assetRequest, leadCapture } = Astro.props;
+const minSubmitMs = leadCapture.minSubmitMs ?? 2000;
+const field = 'w-full px-3 py-2 rounded-md border border-ink/20 bg-canvas text-ink';
+---
+<form
+	class="asset-request-form max-w-md space-y-4 text-left"
+	data-endpoint={leadCapture.assetRequestEndpoint}
+	data-asset-ref={assetRequest.assetRef}
+	data-venture={leadCapture.ventureField}
+	data-honeypot={leadCapture.honeypotField}
+	data-min-submit-ms={minSubmitMs}
+>
+	<div class="grid grid-cols-2 gap-3">
+		<div>
+			<label class="block text-sm font-medium mb-1" for={`ar-first-${assetRequest.assetRef}`}>First name</label>
+			<input id={`ar-first-${assetRequest.assetRef}`} name="firstName" type="text" required maxlength="100" autocomplete="given-name" class={field} />
+		</div>
+		<div>
+			<label class="block text-sm font-medium mb-1" for={`ar-last-${assetRequest.assetRef}`}>Last name</label>
+			<input id={`ar-last-${assetRequest.assetRef}`} name="lastName" type="text" required maxlength="100" autocomplete="family-name" class={field} />
+		</div>
+	</div>
+	<div>
+		<label class="block text-sm font-medium mb-1" for={`ar-email-${assetRequest.assetRef}`}>Work email</label>
+		<input id={`ar-email-${assetRequest.assetRef}`} name="email" type="email" required maxlength="255" autocomplete="email" class={field} />
+	</div>
+	<div>
+		<label class="block text-sm font-medium mb-1" for={`ar-company-${assetRequest.assetRef}`}>Company</label>
+		<input id={`ar-company-${assetRequest.assetRef}`} name="company" type="text" maxlength="255" autocomplete="organization" class={field} />
+	</div>
+	<div>
+		<label class="block text-sm font-medium mb-1" for={`ar-role-${assetRequest.assetRef}`}>Role</label>
+		<select id={`ar-role-${assetRequest.assetRef}`} name="persona" class={field}>
+			{PERSONAS.map((p) => <option value={p.value} selected={p.value === 'unclassified'}>{p.label}</option>)}
+		</select>
+	</div>
+	<label class="flex gap-2 items-start text-sm">
+		<input name="seriesOptIn" type="checkbox" class="mt-1" />
+		<span>Send me the rest of the series as it comes out.</span>
+	</label>
+	<label class="flex gap-2 items-start text-sm">
+		<input name="discuss" type="checkbox" class="mt-1" />
+		<span>I'd like to discuss this with LuhTech.</span>
+	</label>
+	{assetRequest.requestPrompt && (
+		<div>
+			<label class="block text-sm font-medium mb-1" for={`ar-answer-${assetRequest.assetRef}`}>{assetRequest.requestPrompt}</label>
+			<textarea id={`ar-answer-${assetRequest.assetRef}`} name="answer" rows="3" maxlength="4000" class={field}></textarea>
+		</div>
+	)}
+	<div class="hidden" aria-hidden="true">
+		<label for={`ar-${leadCapture.honeypotField}-${assetRequest.assetRef}`}>Website</label>
+		<input id={`ar-${leadCapture.honeypotField}-${assetRequest.assetRef}`} name={leadCapture.honeypotField} type="text" tabindex="-1" autocomplete="off" />
+	</div>
+	<button type="submit" class="px-5 py-2.5 rounded-md bg-accent-primary text-canvas font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-secondary focus-visible:rounded">
+		Send me the paper
+	</button>
+	<p class="asset-request-status text-sm" role="status" aria-live="polite"></p>
+</form>
+
+<script>
+	import { assetRequestBody, contentRequestBody, requestEndpointFor } from '../lib/assetRequest.ts';
+
+	for (const form of document.querySelectorAll<HTMLFormElement>('form.asset-request-form')) {
+		const status = form.querySelector('.asset-request-status') as HTMLParagraphElement;
+		const loadedAt = Date.now();
+		const endpoint = form.dataset.endpoint!;
+		const honeypot = form.dataset.honeypot!;
+		const minSubmitMs = Number(form.dataset.minSubmitMs ?? '2000');
+
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const data = new FormData(form);
+			if ((data.get(honeypot) as string)?.length > 0) return;
+			if (Date.now() - loadedAt < minSubmitMs) return;
+
+			const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+			button.disabled = true;
+			status.textContent = 'Sending...';
+
+			const input = {
+				firstName: String(data.get('firstName') ?? ''),
+				lastName: String(data.get('lastName') ?? ''),
+				email: String(data.get('email') ?? ''),
+				company: String(data.get('company') ?? ''),
+				persona: String(data.get('persona') ?? 'unclassified'),
+				seriesOptIn: data.get('seriesOptIn') === 'on',
+				discuss: data.get('discuss') === 'on',
+				answer: String(data.get('answer') ?? ''),
+			};
+			const ctx = {
+				assetRef: form.dataset.assetRef!,
+				search: window.location.search,
+				pathname: window.location.pathname,
+				ventureRef: form.dataset.venture || undefined,
+			};
+			const post = (url: string, body: unknown) =>
+				fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+			try {
+				const res = await post(endpoint, assetRequestBody(input, ctx));
+				if (!res.ok) throw new Error(String(res.status));
+				const request = contentRequestBody(input, ctx);
+				if (request) await post(requestEndpointFor(endpoint), request).catch(() => undefined);
+				status.textContent = request
+					? "Check your inbox -- the link works for seven days. We'll be in touch about your question."
+					: 'Check your inbox -- the link works for seven days.';
+				form.reset();
+			} catch {
+				status.textContent = 'Something went wrong. Try again in a moment.';
+				button.disabled = false;
+			}
+		});
+	}
+</script>

@@ -9,23 +9,35 @@
 // heading and a dead-end button).
 import Block from '../Block.astro';
 import CtaLink from '../CtaLink.astro';
+import AssetRequestForm from '../AssetRequestForm.astro';
 import LeadCaptureForm from '../LeadCaptureForm.astro';
 import SectionHeading from '../SectionHeading.astro';
 import type { SectionIcons } from '../Section.astro';
 
 export interface Props {
 	section: any;
-	leadCapture?: { destination: string; source: string; ventureField: string; honeypotField: string; minSubmitMs?: number };
+	leadCapture?: { destination: string; source: string; ventureField: string; honeypotField: string; minSubmitMs?: number; assetRequestEndpoint?: string; toolSubmitEndpoint?: string };
 	companyLabel?: string;
 	icons?: SectionIcons;
 }
 const { section, leadCapture, companyLabel, icons } = Astro.props;
 const sectionIcon = icons?.section?.[section.sectionId];
+// A gated asset cta with nowhere to post would render a form that silently
+// fails -- refuse the build instead.
+if (section.assetRequest && !leadCapture?.assetRequestEndpoint) {
+	throw new Error(`Cta.astro: section ${section.sectionId} carries assetRequest but site.leadCapture has no assetRequestEndpoint`);
+}
 ---
 <section id={section.sectionId} class="py-12 text-center border-t border-ink/10" data-reveal>
 	<SectionHeading eyebrow={section.eyebrow} heading={section.heading} subheading={section.subheading} icon={sectionIcon} center class="mb-3" />
 	{section.blocks?.map((b: any) => <Block block={b} class="mb-4 max-w-xl mx-auto text-left" />)}
-	{leadCapture ? (
+	{section.assetRequest && leadCapture?.assetRequestEndpoint ? (
+		// d-2026-10-01-st-asset-request-form: a gated asset cta (page.schema.json
+		// v2.5.0 assetRequest) renders the asset form against the capture service.
+		<div class="text-left max-w-md mx-auto">
+			<AssetRequestForm assetRequest={section.assetRequest} leadCapture={leadCapture as any} />
+		</div>
+	) : leadCapture ? (
 		<div class="text-left max-w-md mx-auto">
 			<LeadCaptureForm leadCapture={leadCapture} heading="" companyLabel={companyLabel} />
 		</div>
