@@ -1,0 +1,242 @@
+---
+// d-2026-10-02-st-paper-landing-three-actions. The paper's one page
+// (/papers/<slug>/): its open summary and figures (rendered through the same
+// section components as the landing page it replaces,
+// d-2026-10-01-eb-whitepaper-hybrid-gate), then three actions.
+//
+// - Download: arriving with ?t=<token> (the delivery email's link) it links
+//   to the gateway's download route, ${assetRequestEndpoint}/<token>, which
+//   records the open and stamps through business-tools. Otherwise it shows
+//   the asset request form; arriving with ?c=<code> the request names that
+//   code as referredByCode (AssetRequestForm / assetRequest.ts).
+// - Feedback (#feedback): the record's feedbackForm, behind a Cloudflare
+//   Turnstile challenge, posted to site.leadCapture.feedbackEndpoint. Name and
+//   email are asked on both arrivals. Without a feedbackEndpoint and a
+//   turnstileSiteKey in site config (site.schema.json 1.4.0) it says plainly
+//   that feedback is not open yet. The fragment is an anchor only; the token
+//   stays in the query.
+// - Share: the page URL with no query or fragment -- never a token or code.
+//
+// Turnstile, implicit rendering (developers.cloudflare.com/turnstile/get-started/
+// client-side-rendering/, read 2026-10-02): the api.js script from
+// challenges.cloudflare.com, a <div class="cf-turnstile" data-sitekey> inside
+// the form, and the token in the hidden input cf-turnstile-response it adds.
+// Tokens are single-use, so the widget is reset after every attempt.
+import Section from './Section.astro';
+import AssetRequestForm from './AssetRequestForm.astro';
+import {
+	feedbackOpen,
+	linkedInShareUrl,
+	mailtoShareUrl,
+	paperSections,
+	shareUrlFor,
+	type PaperRecord,
+} from '../lib/paperLanding.ts';
+
+export interface Props {
+	paper: PaperRecord;
+	slug: string;
+	site: { leadCapture: { assetRequestEndpoint?: string; feedbackEndpoint?: string; turnstileSiteKey?: string; honeypotField: string; minSubmitMs?: number; ventureField?: string; [k: string]: unknown } };
+	route?: string;
+}
+const { paper, slug, site } = Astro.props;
+const route = Astro.props.route ?? `/papers/${slug}/`;
+const leadCapture = site.leadCapture;
+if (!paper.pdfAssetRef) throw new Error(`PaperLanding: paper ${slug} has no pdfAssetRef`);
+if (!leadCapture?.assetRequestEndpoint) throw new Error(`PaperLanding: site.leadCapture has no assetRequestEndpoint for paper ${slug}`);
+
+const sections = paperSections(paper, slug);
+const shareUrl = shareUrlFor(new URL(route, Astro.site ?? Astro.url).href);
+const form = paper.feedbackForm;
+const open = feedbackOpen(leadCapture) && Boolean(form);
+const field = 'w-full px-3 py-2 rounded-md border border-ink/20 bg-canvas text-ink';
+const button = 'px-5 py-2.5 rounded-md bg-accent-primary text-canvas font-medium transition-all duration-200 hover:opacity-90 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-secondary focus-visible:rounded';
+const secondary = 'px-4 py-2 rounded-md border border-ink/20 text-ink font-medium hover:border-accent-primary';
+---
+<div class="paper-landing" data-asset-request-endpoint={leadCapture.assetRequestEndpoint}>
+	{sections.map((s) => <Section section={s} site={site} />)}
+
+	<section id="download" class="py-12 border-t border-ink/10" data-reveal>
+		<h2 class="font-display text-2xl font-bold mb-4">Download</h2>
+		<div class="paper-download-link" hidden>
+			<a class={`${button} inline-block`} href="#download" rel="nofollow">Download the paper</a>
+		</div>
+		<div class="paper-download-request max-w-md">
+			<AssetRequestForm assetRequest={{ assetRef: paper.pdfAssetRef }} leadCapture={leadCapture as any} />
+		</div>
+	</section>
+
+	<section id="feedback" class="py-12 border-t border-ink/10" data-reveal>
+		<h2 class="font-display text-2xl font-bold mb-4">Feedback</h2>
+		{open && form ? (
+			<>
+				<p class="paper-feedback-needs-arrival text-sm opacity-80">Feedback opens from the link in your email or the code on your copy of the paper.</p>
+				<form
+					class="paper-feedback-form max-w-xl space-y-4"
+					hidden
+					data-endpoint={leadCapture.feedbackEndpoint}
+					data-asset-ref={paper.pdfAssetRef}
+				>
+					<div>
+						<label class="block text-sm font-medium mb-1" for="pf-role">Your role</label>
+						<select id="pf-role" name="roleId" required class={field}>
+							{form.roles.map((r, i) => <option value={r.roleId} selected={i === 0}>{r.label}</option>)}
+						</select>
+					</div>
+					{form.questions.map((q) => (
+						<div data-question-id={q.questionId}>
+							<label class="block text-sm font-medium mb-1" for={`pf-q-${q.questionId}`}>{q.prompt}</label>
+							{q.answerType === 'choice' ? (
+								<>
+									<select id={`pf-q-${q.questionId}`} name={`answer:${q.questionId}`} class={field}>
+										<option value="" selected></option>
+										{(q.choices ?? []).map((c) => <option value={c.choiceId}>{c.label}</option>)}
+									</select>
+									{q.allowOther && (
+										<input name={`other:${q.questionId}`} type="text" maxlength="4000" aria-label={`${q.prompt} (other)`} class={`${field} mt-2`} />
+									)}
+								</>
+							) : (
+								<textarea id={`pf-q-${q.questionId}`} name={`answer:${q.questionId}`} rows="3" maxlength="4000" class={field}></textarea>
+							)}
+						</div>
+					))}
+					<div class="grid grid-cols-2 gap-3">
+						<div>
+							<label class="block text-sm font-medium mb-1" for="pf-first">First name</label>
+							<input id="pf-first" name="firstName" type="text" required maxlength="100" autocomplete="given-name" class={field} />
+						</div>
+						<div>
+							<label class="block text-sm font-medium mb-1" for="pf-last">Last name</label>
+							<input id="pf-last" name="lastName" type="text" required maxlength="100" autocomplete="family-name" class={field} />
+						</div>
+					</div>
+					<div>
+						<label class="block text-sm font-medium mb-1" for="pf-email">Email</label>
+						<input id="pf-email" name="email" type="email" required maxlength="255" autocomplete="email" class={field} />
+					</div>
+					<div>
+						<label class="block text-sm font-medium mb-1" for="pf-company">Company</label>
+						<input id="pf-company" name="company" type="text" maxlength="255" autocomplete="organization" class={field} />
+					</div>
+					<label class="flex gap-2 items-start text-sm">
+						<input name="publishConsent" type="checkbox" class="mt-1" />
+						<span>LuhTech may publish my answers.</span>
+					</label>
+					<div class="cf-turnstile" data-sitekey={leadCapture.turnstileSiteKey}></div>
+					<button type="submit" class={button}>Send my answers</button>
+					<p class="paper-feedback-status text-sm" role="status" aria-live="polite"></p>
+				</form>
+				<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+			</>
+		) : (
+			<p class="text-sm opacity-80">Feedback is not open yet.</p>
+		)}
+	</section>
+
+	<section id="share" class="py-12 border-t border-ink/10" data-reveal>
+		<h2 class="font-display text-2xl font-bold mb-4">Share</h2>
+		<div class="flex gap-3 flex-wrap items-center">
+			<button type="button" class={`paper-share-copy ${secondary}`} data-share-url={shareUrl}>Copy link</button>
+			<a class={secondary} href={linkedInShareUrl(shareUrl)} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+			<a class={secondary} href={mailtoShareUrl(shareUrl, paper.title)}>Email</a>
+			<span class="paper-share-status text-sm" role="status" aria-live="polite"></span>
+		</div>
+	</section>
+</div>
+
+<script>
+	import { arrivalFrom, downloadUrlFor, feedbackBody, feedbackMessage } from '../lib/paperLanding.ts';
+	import { sourceRefFor } from '../lib/assetRequest.ts';
+
+	for (const root of document.querySelectorAll<HTMLElement>('.paper-landing')) {
+		const arrival = arrivalFrom(window.location.search);
+
+		// Download: a token links straight to the gateway's download route.
+		if (arrival.by === 'token') {
+			const link = root.querySelector<HTMLElement>('.paper-download-link');
+			const anchor = link?.querySelector('a');
+			if (link && anchor) {
+				anchor.href = downloadUrlFor(root.dataset.assetRequestEndpoint!, arrival.token);
+				link.hidden = false;
+				root.querySelector<HTMLElement>('.paper-download-request')!.hidden = true;
+			}
+		}
+
+		// Feedback: open to a reader who arrived by token or code.
+		const form = root.querySelector<HTMLFormElement>('form.paper-feedback-form');
+		if (form && arrival.by !== 'none') {
+			form.hidden = false;
+			root.querySelector<HTMLElement>('.paper-feedback-needs-arrival')!.hidden = true;
+			const status = form.querySelector('.paper-feedback-status') as HTMLParagraphElement;
+			form.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const data = new FormData(form);
+				const turnstileToken = String(data.get('cf-turnstile-response') ?? '');
+				if (!turnstileToken) {
+					status.textContent = 'Complete the challenge first.';
+					return;
+				}
+				const answers: Record<string, string> = {};
+				for (const [k, v] of data.entries()) {
+					if (k.startsWith('answer:')) answers[k.slice(7)] = String(v);
+				}
+				for (const [k, v] of data.entries()) {
+					if (k.startsWith('other:') && String(v).trim()) answers[k.slice(6)] = String(v);
+				}
+				const body = feedbackBody(
+					{
+						roleId: String(data.get('roleId') ?? ''),
+						answers,
+						publishConsent: data.get('publishConsent') === 'on',
+						firstName: String(data.get('firstName') ?? ''),
+						lastName: String(data.get('lastName') ?? ''),
+						email: String(data.get('email') ?? ''),
+						company: String(data.get('company') ?? ''),
+						turnstileToken,
+					},
+					{ assetRef: form.dataset.assetRef!, arrival, sourceRef: sourceRefFor('', window.location.pathname) }
+				);
+				if (!body) return;
+				if (Object.keys(body.answers).length === 0) {
+					status.textContent = 'Answer at least one question.';
+					return;
+				}
+				const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+				button.disabled = true;
+				status.textContent = 'Sending...';
+				try {
+					const res = await fetch(form.dataset.endpoint!, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify(body),
+					});
+					const json = (await res.json().catch(() => ({}))) as { error?: string };
+					status.textContent = feedbackMessage(res.status, json.error);
+					if (res.status === 201) form.reset();
+				} catch {
+					status.textContent = feedbackMessage(0);
+				}
+				button.disabled = false;
+				(window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
+			});
+		}
+
+		// Share: copy the non-personal link the button carries.
+		const copy = root.querySelector<HTMLButtonElement>('.paper-share-copy');
+		const shareStatus = root.querySelector('.paper-share-status') as HTMLSpanElement;
+		copy?.addEventListener('click', async () => {
+			try {
+				await navigator.clipboard.writeText(copy.dataset.shareUrl!);
+				shareStatus.textContent = 'Link copied.';
+			} catch {
+				shareStatus.textContent = copy.dataset.shareUrl!;
+			}
+		});
+
+		// #feedback lands on the Feedback action once the arrival has shown or hidden its parts.
+		if (window.location.hash === '#feedback') {
+			root.querySelector('#feedback')?.scrollIntoView();
+		}
+	}
+</script>

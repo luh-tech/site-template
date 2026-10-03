@@ -40,6 +40,17 @@ export function sourceRefFor(search: string, pathname: string): string {
   return SOURCE_REF.test(pageRef) ? pageRef : 'page:home';
 }
 
+/**
+ * The code a scanned or forwarded copy carried (?c=<code>), sent as
+ * referredByCode so the request is attributed to it
+ * (d-2026-10-02-eb-asset-request-referred-by-code). Undefined when absent or
+ * malformed (gateway pattern ^[A-Za-z0-9_-]{4,64}$).
+ */
+export function referredByCodeFrom(search: string): string | undefined {
+  const c = new URLSearchParams(search).get('c');
+  return c && /^[A-Za-z0-9_-]{4,64}$/.test(c) ? c : undefined;
+}
+
 /** The /requests endpoint beside the /assets endpoint the site config names. */
 export function requestEndpointFor(assetRequestEndpoint: string): string {
   return assetRequestEndpoint.replace(/\/assets\/?$/, '/requests');
@@ -66,6 +77,7 @@ export interface AssetContext {
 /** The asset request body. */
 export function assetRequestBody(input: AssetFormInput, ctx: AssetContext) {
   const utm = utmFromSearch(ctx.search);
+  const referredByCode = referredByCodeFrom(ctx.search);
   return {
     assetRef: ctx.assetRef,
     sourceRef: sourceRefFor(ctx.search, ctx.pathname),
@@ -74,6 +86,7 @@ export function assetRequestBody(input: AssetFormInput, ctx: AssetContext) {
     persona: PERSONAS.some((p) => p.value === input.persona) ? input.persona : 'unclassified',
     seriesOptIn: input.seriesOptIn === true,
     ...(utm ? { utm } : {}),
+    ...(referredByCode ? { referredByCode } : {}),
     contact: {
       firstName: input.firstName.trim(),
       lastName: input.lastName.trim(),

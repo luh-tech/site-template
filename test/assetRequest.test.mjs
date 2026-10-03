@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   assetRequestBody,
   contentRequestBody,
+  referredByCodeFrom,
   requestEndpointFor,
   sourceRefFor,
   utmFromSearch,
@@ -54,4 +55,14 @@ test('no request unless "discuss with us" is ticked; then a whitepaper request w
 
 test('the requests endpoint sits beside the assets endpoint', () => {
   assert.equal(requestEndpointFor('https://api.luh.tech/api/tools/submissions/assets'), 'https://api.luh.tech/api/tools/submissions/requests');
+});
+
+test('a code arrival names its code as referredByCode; no code, or a malformed one, sends none (d-2026-10-02-st-paper-landing-three-actions)', () => {
+  const coded = assetRequestBody(input, { ...ctx, search: '?c=Ab3_x-9Q', pathname: '/papers/the-unshared-record/' });
+  assert.equal(coded.referredByCode, 'Ab3_x-9Q');
+  assert.equal(coded.sourceRef, 'page:the-unshared-record');
+  assert.ok(!('utm' in coded));
+  assert.ok(!('referredByCode' in assetRequestBody(input, ctx)));
+  assert.ok(!('referredByCode' in assetRequestBody(input, { ...ctx, search: '?c=a b' })));
+  assert.equal(referredByCodeFrom('?c=abc'), undefined);
 });
