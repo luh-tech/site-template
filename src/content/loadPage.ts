@@ -1,41 +1,4 @@
 import { readFileSync } from 'node:fs';
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
-import { fetchSchema, fetchSupportSchema } from './schemaFetch.js';
-
-const PAGE_PIN = '2.5.0';
-const CAPABILITY_CLAIM_PIN = '0.2.0';
-
-let validatorPromise: ReturnType<typeof buildValidator> | null = null;
-
-async function buildValidator() {
-  const ajv = new Ajv({ strict: false, allErrors: true });
-  addFormats(ajv);
-
-  const [pageSchema, capabilityClaimSchema, cellSchema, definitionsSchema, graphSchema, ventureEnum, contentSpineSchema] =
-    await Promise.all([
-      fetchSchema('content/page.schema.json', PAGE_PIN),
-      fetchSchema('content/capability-claim.schema.json', CAPABILITY_CLAIM_PIN),
-      fetchSupportSchema('_definitions/cell.schema.json'),
-      fetchSupportSchema('_definitions/definitions.schema.json'),
-      fetchSupportSchema('_definitions/graph.schema.json'),
-      fetchSupportSchema('_enums/venture.enum.json'),
-      // page.schema.json v2.0.0 (content-spine adoption) $refs this for
-      // publishRecordRefs/themeRefs/strategyRef/producedBy -- missing here
-      // until now because PAGE_PIN itself couldn't move past v1.4.0 (see
-      // this same PR's own PAGE_PIN fix) to ever need it.
-      fetchSupportSchema('_definitions/content-spine.schema.json'),
-    ]);
-
-  ajv.addSchema(capabilityClaimSchema as object);
-  ajv.addSchema(cellSchema as object);
-  ajv.addSchema(definitionsSchema as object);
-  ajv.addSchema(graphSchema as object);
-  ajv.addSchema(ventureEnum as object);
-  ajv.addSchema(contentSpineSchema as object);
-
-  return ajv.compile(pageSchema as object);
-}
 
 export interface PageBlock {
   blockType: string;
@@ -111,26 +74,13 @@ export interface LoadedPage {
 }
 
 /**
- * Reads a content/page.schema.json instance from disk and ajv-validates it
- * against the pinned live schema (+ its real $ref chain). Throws on any
- * validation failure -- callers should let this fail the build, not catch
- * and continue with an unvalidated instance.
+ * Reads a content/page.schema.json instance from disk. The instance is validated in the
+ * site repo's CI against schema-registry (schema-registry content-validate.yml),
+ * not here: this public package fetches and carries no schema.
  */
 export async function loadPage(path: string): Promise<LoadedPage> {
   const raw = readFileSync(path, 'utf-8');
   const instance = JSON.parse(raw);
-
-  if (!validatorPromise) validatorPromise = buildValidator();
-  const validate = await validatorPromise;
-
-  if (!validate(instance)) {
-    const errors = (validate.errors ?? [])
-      .map((e) => `  ${e.instancePath || '/'} ${e.message}`)
-      .join('\n');
-    throw new Error(
-      `${path} failed content/page.schema.json@${PAGE_PIN} validation:\n${errors}`
-    );
-  }
 
   return instance as LoadedPage;
 }
