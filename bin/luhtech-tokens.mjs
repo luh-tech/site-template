@@ -6,23 +6,15 @@
  * same real logic, generalized to take instance/output paths as CLI args
  * instead of assuming one repo's directory layout.
  *
+ * The instance is validated in the site repo's CI (schema-registry
+ * content-validate.yml), not here.
+ *
  * Usage:
  *   luhtech-tokens <path-to-brand-identity.json> <output-css-path>
  *   luhtech-tokens content/brand/ectropy.json src/styles/tokens.generated.css
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
-
-const SCHEMA_BASE = 'https://schemas.luh.tech';
-const SCHEMA_REFS = [
-  'portfolio/brand-identity.schema.json',
-  '_enums/luhtech-enums.schema.v2.json',
-  '_enums/venture.enum.json',
-  '_definitions/definitions.schema.json',
-  '_definitions/graph.schema.json',
-];
 
 const [, , instanceArg, outputArg] = process.argv;
 if (!instanceArg || !outputArg) {
@@ -31,15 +23,6 @@ if (!instanceArg || !outputArg) {
 }
 const instancePath = resolve(process.cwd(), instanceArg);
 const outputPath = resolve(process.cwd(), outputArg);
-
-async function fetchSchema(rel) {
-  const url = `${SCHEMA_BASE}/${rel}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch canonical schema ${url}: HTTP ${res.status}.`);
-  }
-  return res.json();
-}
 
 function readInstance(path) {
   let raw;
@@ -78,25 +61,9 @@ ${color.accent.secondary ? `  --color-accent-secondary: ${cssColor(color.accent.
 }
 
 async function main() {
-  const ajv = new Ajv({ strict: false, allErrors: true });
-  addFormats(ajv);
-
-  const [brandIdentitySchema, ...refs] = await Promise.all(SCHEMA_REFS.map(fetchSchema));
-  for (const ref of refs) {
-    ajv.addSchema(ref);
-  }
-  const validate = ajv.compile(brandIdentitySchema);
-
+  // The brand instance is validated in the site repo's CI against
+  // schema-registry (content-validate.yml); this public package fetches no schema.
   const brand = readInstance(instancePath);
-
-  if (!validate(brand)) {
-    const detail = (validate.errors ?? [])
-      .map((e) => `${e.instancePath || '(root)'}: ${e.message}`)
-      .join('; ');
-    throw new Error(
-      `${instancePath} failed validation against portfolio/brand-identity.schema.json: ${detail}`
-    );
-  }
 
   const css = generateCss(brand);
   mkdirSync(dirname(outputPath), { recursive: true });

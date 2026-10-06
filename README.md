@@ -20,9 +20,10 @@ site with no way to supply one (GTM-L3 G1.4-R, 2026-09-08).
 ## The contract
 
 - **`loadSite(path)`** / **`loadPage(path)`** (`@luhtech/site-template/content`)
-  read a JSON file and ajv-validate it against the live, version-pinned
-  schema (`package.json`'s `luhtech.schemaPins`) plus its real `$ref` chain.
-  Throws on any validation failure.
+  read a JSON content instance. They do not validate: since 0.18.0 each site
+  repo validates its content in CI against schema-registry with the reusable
+  `content-validate.yml` workflow, so this public package fetches and carries
+  no schema. `loadTool`, `loadBrand` and `luhtech-tokens` work the same way.
 - **`<SiteLayout site={site} page={page}>`** (`@luhtech/site-template/layouts/SiteLayout.astro`)
   renders nav from `site.nav`, footer from `site.footer.legalLine` +
   `parentHref`, and `<head>` from `page.seo` (title, description, og:\*,
@@ -105,16 +106,6 @@ site with no way to supply one (GTM-L3 G1.4-R, 2026-09-08).
   file `eb-agent` reads under the hood, since this bin runs in plain CI with
   no MCP access. `kind=method` claims describe design intent regardless of
   status and are reported, never failed.
-
-## A known, out-of-scope gap
-
-`content/capability-claim.schema.json` 404s at both its bare and
-version-pinned live URLs (a schema-registry publish-pipeline issue, not
-something this package can fix). `loadPage`'s validator falls back to a
-vendored local copy (`src/content/_vendored-schema-fallback/`, fetched from
-the real schema-registry source, not fabricated) only for this one schema,
-and logs a warning when it does. Every other schema fetch failure is a hard
-error.
 
 ## Article sections, table of contents, linkable blocks
 
