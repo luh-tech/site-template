@@ -14,4 +14,5 @@ export const VENTURES = [
   { id: 'raizal', repo: 'Raizal', favicon: 'public/favicon.svg', logoAstro: 'src/components/Logo.astro', animatedMarkSvg: 'public/brand/raizal-mark-animated.svg', brandJson: 'content/brand/raizal.json' },
   { id: 'replique', repo: 'Replique', favicon: 'site/public/favicon.svg', logoAstro: 'site/src/components/Logo.astro', animatedMarkSvg: 'site/public/brand/replique-mark-animated.svg', brandJson: 'content/brand/replique.json' },
   { id: 'hilja', repo: 'Hilja', favicon: 'public/favicon.svg', logoAstro: 'src/components/Logo.astro', animatedMarkSvg: 'public/brand/hilja-mark-animated.svg', brandJson: 'content/brand/hilja.json' },
+  { id: 'luhtech-business', repo: 'LuhTech-Business', favicon: 'public/favicon.svg', logoAstro: 'src/components/Logo.astro', brandJson: 'content/brand/luhtech-business.json' },
 ];

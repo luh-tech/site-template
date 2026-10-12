@@ -18,4 +18,5 @@ export const VENTURE_DIRECTORY: Record<string, VentureDirectoryEntry> = {
   raizal: {"name":"Raizal","oneLiner":"A cooperative carbon marketplace with credits traced to the field."},
   replique: {"name":"Replique","oneLiner":"Protocol intelligence for the research bench."},
   hilja: {"name":"Hilja","oneLiner":"Intelligent surfaces that tune a room to how it's being used."},
+  luhtech-business: {"name":"LuhTech","oneLiner":"A construction technology venture studio."},
 };
