@@ -7,3 +7,5 @@ export type { LoadedBrand } from './loadBrand.js';
 export { applyBrandDefaults } from './bindBrand.js';
 export { loadTool } from './loadTool.js';
 export type { LoadedTool, ToolFieldSpec, ToolPresentationSpec, ToolMethodNoteSpec, ToolSourceSpec } from './loadTool.js';
+export { loadFigures, configureFigures, figureFor } from './figures.js';
+export type { FigureConfig } from './figures.js';

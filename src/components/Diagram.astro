@@ -7,13 +7,20 @@ import RingComparison from './diagrams/RingComparison.astro';
 import VectorSum from './diagrams/VectorSum.astro';
 import DataLineChart from './diagrams/DataLineChart.astro';
 import ConnectionGraph from './diagrams/ConnectionGraph.astro';
+import Figure from '@luhtech/figures/astro';
+import { figureFor } from '../content/figures.js';
 
 export interface Props {
-	diagram: { diagramId: string; diagramType: string; caption?: string; data: any };
+	// d-2026-10-16-bt-figure-kit (page 2.8.0): a diagram either draws inline (diagramType + data) or
+	// names a figure record by figureRef, drawn by @luhtech/figures in the site's brand theme.
+	diagram: { diagramId: string; diagramType?: string; caption?: string; data?: any; figureRef?: string };
 	class?: string;
 }
 const { diagram, class: className = 'my-8' } = Astro.props;
+const named = diagram.figureRef ? figureFor(diagram.figureRef) : null;
 ---
+{named && <Figure figure={named.record} theme={named.theme} class={className} />}
+{!named && (
 <figure class={className}>
 	{diagram.diagramType === 'ring-comparison' && <RingComparison rings={diagram.data.rings} />}
 	{diagram.diagramType === 'vector-sum' && <VectorSum rays={diagram.data.rays} />}
@@ -25,3 +32,4 @@ const { diagram, class: className = 'my-8' } = Astro.props;
 	)}
 	{diagram.caption && <figcaption class="text-sm text-ink/60 mt-2 text-center">{diagram.caption}</figcaption>}
 </figure>
+)}

@@ -37,7 +37,7 @@ export interface Props {
 	block: { blockType: string; text?: string; label?: string; href?: string; diagramId?: string; src?: string; alt?: string; caption?: string; name?: string; title?: string };
 	// This section's own diagrams[] array, only needed when block.blockType
 	// is "diagram" -- the block is a position, diagrams[] stays the data.
-	diagrams?: { diagramId: string; diagramType: string; caption?: string; data: any }[];
+	diagrams?: { diagramId: string; diagramType?: string; caption?: string; data?: any; figureRef?: string }[];
 	class?: string;
 }
 const { block, diagrams = [], class: className = '' } = Astro.props;
