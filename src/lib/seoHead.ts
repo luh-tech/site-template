@@ -36,6 +36,19 @@ export interface SeoHeadInput {
   /** Which ICON_FILES exist in the consuming site's public/ directory. */
   publicFiles: ReadonlySet<string>;
   locale?: string;
+  /** content/site 1.5.0 devices: installable adds the iOS/Android web-app meta. */
+  devices?: SiteDevices;
+}
+
+/** content/site.schema.json 1.5.0 `devices` (d-2026-10-19-sr-site-devices). */
+export interface SiteDevices {
+  supported: Array<'phone' | 'tablet' | 'desktop'>;
+  installable?: boolean;
+}
+
+export interface MetaTag {
+  name: string;
+  content: string;
 }
 
 export interface LinkTag {
@@ -51,6 +64,8 @@ export interface SeoHead {
   locale: string;
   themeColor: string | null;
   links: LinkTag[];
+  /** Web-app meta for an installable site (content/site devices.installable). */
+  metas: MetaTag[];
 }
 
 export function canonicalUrl(site: URL | string | undefined, pathname: string): string | null {
@@ -67,12 +82,24 @@ export function buildSeoHead(input: SeoHeadInput): SeoHead {
   if (publicFiles.has(ICON_FILES.png192)) links.push({ rel: 'icon', href: `/${ICON_FILES.png192}`, type: 'image/png', sizes: '192x192' });
   if (publicFiles.has(ICON_FILES.appleTouch)) links.push({ rel: 'apple-touch-icon', href: `/${ICON_FILES.appleTouch}`, sizes: '180x180' });
   if (publicFiles.has(ICON_FILES.manifest)) links.push({ rel: 'manifest', href: `/${ICON_FILES.manifest}` });
+  // An installable site opens from the home screen without browser chrome. The
+  // status bar keeps its default style so content never sits under it.
+  const siteName = brand?.identity?.name ?? null;
+  const metas: MetaTag[] = input.devices?.installable
+    ? [
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        ...(siteName ? [{ name: 'apple-mobile-web-app-title', content: siteName }] : []),
+      ]
+    : [];
   return {
     canonical,
-    siteName: brand?.identity?.name ?? null,
+    siteName,
     locale: input.locale ?? 'en_US',
     // The header renders on bg-ink, so the browser chrome matches it.
     themeColor: brand?.color?.foundation?.ink?.hex ?? null,
     links,
+    metas,
   };
 }

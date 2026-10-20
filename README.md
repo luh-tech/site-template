@@ -362,6 +362,16 @@ Two bins go with it:
   link, `og:image` or `<html lang>`. Warnings: title over 60 characters,
   description outside 70-160, anything but one `<h1>` -- those are content
   edits, reported rather than blocking.
+- **`luhtech-device-smoke [dist] [--site content/sites/<venture>.json]`**
+  (0.21.0, content/site 1.5.0 `devices`) loads every built page at each
+  device the site supports -- phone 390x844, tablet 820x1180 and 1180x820,
+  desktop 1440x900; all three when the record has no `devices` -- and exits
+  1 on a missing or zoom-locking viewport, a page wider than the screen, no
+  visible header link or menu button, or, for `devices.installable`, a
+  missing manifest link, apple-touch-icon or `apple-mobile-web-app-capable`.
+  Needs Playwright, an optional peer: `npm i -D playwright && npx playwright
+  install chromium`. `SiteLayout` emits the web-app meta for an installable
+  site.
 
 ## Migrating a venture site
 
