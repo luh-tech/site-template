@@ -10,7 +10,8 @@
 // /brand/{brandRef}-mark.svg file (onerror-hidden if even that's missing)
 // for every venture that doesn't have one yet. Not every venture needs an
 // animated mark for this to work; it degrades honestly per-venture
-// instead of assuming universal coverage.
+// instead of assuming universal coverage. An animated mark replays when
+// clicked (data-mark-replay="venture", SiteLayout's installMarkReplay, 0.22.0).
 import { VENTURE_MARKS } from '../lib/venture-marks.generated';
 
 export interface Props {
@@ -21,7 +22,7 @@ const { brandRef, class: className = 'h-6 w-6 mb-2' } = Astro.props;
 const animated = VENTURE_MARKS[brandRef];
 ---
 {animated ? (
-	<svg xmlns="http://www.w3.org/2000/svg" viewBox={animated.viewBox} class={className} role="img" aria-label={brandRef} set:html={animated.markup} />
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox={animated.viewBox} class={className} role="img" aria-label={brandRef} data-mark-replay="venture" set:html={animated.markup} />
 ) : (
 	<img
 		src={`/brand/${brandRef}-mark.svg`}

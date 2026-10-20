@@ -373,6 +373,37 @@ Two bins go with it:
   install chromium`. `SiteLayout` emits the web-app meta for an installable
   site.
 
+## An animated mark replays when clicked (0.22.0)
+
+Every animated mark ran once on load and then sat on its last frame;
+clicking it did nothing. `SiteLayout` now installs one replay for every
+element on the page carrying `data-mark-replay="<group>"`:
+
+- **Inline markup** (an `<svg>`, or a wrapper around one, animated with
+  CSS) restarts its animations in place. `VentureMark` sets
+  `data-mark-replay="venture"` on an animated mark.
+- **An `<img>` of an animated SVG** gets a fresh `data:` URL of the
+  animated file, so the browser draws it from frame 0. Point
+  `data-mark-replay-src` at the animated file when the `<img>` shows a
+  static one at rest (Ectropy's lockup, which its reveal ends on). `data:`
+  rather than `blob:`, because a CSP like ectropy.ai's allows `data:`
+  images and not `blob:`.
+
+A click on a mark whose link opens this same page replays it and does not
+reload. A click that opens another page of the site carries the group to
+that page in `sessionStorage`, and that page replays it on load, so the nav
+logo (linked to `/`) plays on the home page it opens. A link to another
+origin, or one opened in a new tab, is left alone. Under
+`prefers-reduced-motion: reduce` nothing replays.
+
+A site opts its nav logo in on the element it passes to the `logo` slot:
+
+```astro
+<Fragment slot="logo">
+  <img src="/brand/x-lockup.svg" data-mark-replay="nav" data-mark-replay-src="/brand/x-mark-animated.svg" alt="X" />
+</Fragment>
+```
+
 ## Migrating a venture site
 
 A migration is: author `content/site.<venture>.json` + `content/pages/*.json`
