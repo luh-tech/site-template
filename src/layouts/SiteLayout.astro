@@ -14,7 +14,7 @@ import Icon from '../components/Icon.astro';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { LoadedBrand } from '../content/loadBrand.js';
-import { ICON_FILES, buildSeoHead } from '../lib/seoHead.js';
+import { ICON_FILES, buildSeoHead, type SiteDevices } from '../lib/seoHead.js';
 
 export interface Props {
 	site: LoadedSite;
@@ -30,7 +30,14 @@ const { site, page, brand } = Astro.props as Props;
 const publicFiles = new Set(
 	Object.values(ICON_FILES).filter((f) => existsSync(join(process.cwd(), 'public', f)))
 );
-const head = buildSeoHead({ site: Astro.site, pathname: Astro.url.pathname, brand, publicFiles });
+const head = buildSeoHead({
+	site: Astro.site,
+	pathname: Astro.url.pathname,
+	brand,
+	publicFiles,
+	// content/site 1.5.0 (d-2026-10-19-sr-site-devices): installable adds the web-app meta.
+	devices: site.devices as SiteDevices | undefined,
+});
 
 const seo = page.seo as { title: string; description: string; ogImage?: string; noindex?: boolean };
 const footer = site.footer as { legalLine: string; parentHref?: string };
@@ -80,6 +87,7 @@ const linkItems = nav.filter((item) => item !== ctaItem);
 
 		{head.themeColor && <meta name="theme-color" content={head.themeColor} />}
 		{head.links.map((l) => <link rel={l.rel} href={l.href} type={l.type} sizes={l.sizes} />)}
+		{head.metas.map((m) => <meta name={m.name} content={m.content} />)}
 
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
