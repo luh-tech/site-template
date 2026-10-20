@@ -167,6 +167,11 @@ const linkItems = nav.filter((item) => item !== ctaItem);
 			</div>
 		</footer>
 		<script>
+			// An animated mark replays when it is clicked: any [data-mark-replay]
+			// on the page, the nav logo and VentureMark included (0.22.0).
+			import { installMarkReplay } from '../lib/markReplay';
+			installMarkReplay();
+
 			// Mobile nav toggle. Plain click handler + classList, no
 			// framework/island needed for something this small -- matches
 			// this file's own existing no-js/reveal scripts' own approach.
