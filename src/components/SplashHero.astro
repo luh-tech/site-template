@@ -38,11 +38,15 @@ export interface Props {
 	heading: string;
 	lede: string;
 	ctas?: Array<{ label: string; href: string; intent: string }>;
-	/** Raw <polygon>/<path> markup for the wordmark SVG (no outer <svg> tag). */
-	wordmarkMarkup: string;
-	/** viewBox for the wordmark <svg>, e.g. "-50 -50 1100 286". */
-	wordmarkViewBox: string;
-	wordmarkAriaLabel: string;
+	/** The intro played on load: "wordmark" (the wireframe -> white-fill wave -> fly-out splash below) or "none"
+	 * (the photo hero alone; a venture that animates its logo in the nav instead, e.g. Ectropy's reverse reveal).
+	 * Default "wordmark", so every existing caller is unchanged. */
+	intro?: 'wordmark' | 'none';
+	/** Raw <polygon>/<path> markup for the wordmark SVG (no outer <svg> tag). Required when intro is "wordmark". */
+	wordmarkMarkup?: string;
+	/** viewBox for the wordmark <svg>, e.g. "-50 -50 1100 286". Required when intro is "wordmark". */
+	wordmarkViewBox?: string;
+	wordmarkAriaLabel?: string;
 	/** Unique per venture/page -- sessionStorage key so the splash plays once per session, independently of any other SplashHero on the same origin. */
 	sessionKey: string;
 	/** CSS selector for the fly-out landing target, evaluated at play time. Default matches SiteLayout's own nav logo anchor. */
@@ -58,6 +62,7 @@ const {
 	heading,
 	lede,
 	ctas = [],
+	intro = 'wordmark',
 	wordmarkMarkup,
 	wordmarkViewBox,
 	wordmarkAriaLabel,
@@ -66,6 +71,9 @@ const {
 	dataLines = [],
 } = Astro.props;
 
+if (intro === 'wordmark' && (!wordmarkMarkup || !wordmarkViewBox || !wordmarkAriaLabel)) {
+	throw new Error('SplashHero: intro "wordmark" needs wordmarkMarkup, wordmarkViewBox and wordmarkAriaLabel');
+}
 const rowPositions = [4, 24, 40, 62, 80, 96];
 ---
 <section class="relative w-screen left-1/2 -translate-x-1/2 -mt-16 h-[85vh] min-h-[520px] overflow-hidden hero-motion" id="hero">
@@ -106,6 +114,7 @@ const rowPositions = [4, 24, 40, 62, 80, 96];
      wordmark's fixed-position fly-out, compounding the two motions
      together instead of letting them animate independently toward two
      different targets. -->
+{intro === 'wordmark' && (<>
 <div class="splash-overlay" id={`splash-overlay-${sessionKey}`}></div>
 <div class="splash-wordmark-wrap" id={`splash-wordmark-wrap-${sessionKey}`}>
 	<svg
@@ -118,6 +127,7 @@ const rowPositions = [4, 24, 40, 62, 80, 96];
 		set:html={wordmarkMarkup}
 	/>
 </div>
+</>)}
 
 <style>
 	.hero-gradient{
