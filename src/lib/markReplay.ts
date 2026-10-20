@@ -13,15 +13,14 @@
 //     own src). data:, not blob:, because ectropy.ai's CSP allows data: and
 //     https: images but not blob:. Each replay's URL differs by a trailing
 //     comment, so the browser draws a new image and its timeline starts at 0.
-// A click that opens this same page replays in place and does not reload.
-// A click that opens another page of the site leaves the group pending in
-// sessionStorage, and that page replays it on load: the nav logo links to
-// "/", so from any other page the replay is what the home page shows.
-// Reduced motion: nothing replays.
+// A click that opens this same page replays in place and does not reload,
+// so the nav logo (linked to "/") replays on the landing page. A click that
+// opens any other page is an ordinary navigation (L4 2026-10-20: "logo
+// replay only needs to happen on the landing page"). Reduced motion:
+// nothing replays.
 
 export const REPLAY_ATTR = 'data-mark-replay';
 export const REPLAY_SRC_ATTR = 'data-mark-replay-src';
-export const PENDING_KEY = 'mark-replay-pending';
 
 export type ReplayTarget = 'here' | 'next' | 'away';
 
@@ -74,34 +73,17 @@ export function replayMark(el: Element): void {
 	}
 }
 
-function replayGroup(doc: Document, group: string): void {
-	for (const el of doc.querySelectorAll(`[${REPLAY_ATTR}]`)) {
-		if (el.getAttribute(REPLAY_ATTR) === group) replayMark(el);
-	}
-}
-
-/** Wire every [data-mark-replay] on the page: replay on click, and replay a
- * group a click on the previous page left pending. */
+/** Wire every [data-mark-replay] on the page: a click on one whose link
+ * opens this page replays it. */
 export function installMarkReplay(doc: Document = document, win: Window = window): void {
 	if (win.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-	let pending: string | null = null;
-	try {
-		pending = win.sessionStorage.getItem(PENDING_KEY);
-		if (pending !== null) win.sessionStorage.removeItem(PENDING_KEY);
-	} catch { /* storage unavailable: no carried replay */ }
-	if (pending !== null) replayGroup(doc, pending);
-
 	doc.addEventListener('click', (e) => {
 		const el = (e.target as Element | null)?.closest?.(`[${REPLAY_ATTR}]`);
 		if (!el) return;
 		const link = el.closest('a[href]') as HTMLAnchorElement | null;
-		const newTab = !!link && (link.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0);
-		const where = newTab ? 'here' : replayTarget(link?.getAttribute('href'), win.location.href);
-		if (where === 'here') {
-			if (link && !newTab && new URL(link.href).hash === win.location.hash) e.preventDefault();
-			replayMark(el);
-		} else if (where === 'next') {
-			try { win.sessionStorage.setItem(PENDING_KEY, el.getAttribute(REPLAY_ATTR) ?? ''); } catch { /* the next page plays as it would */ }
-		}
+		if (link && (link.target === '_blank' || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0)) return;
+		if (replayTarget(link?.getAttribute('href'), win.location.href) !== 'here') return;
+		if (link && new URL(link.href).hash === win.location.hash) e.preventDefault();
+		replayMark(el);
 	});
 }

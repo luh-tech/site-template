@@ -390,10 +390,9 @@ element on the page carrying `data-mark-replay="<group>"`:
   images and not `blob:`.
 
 A click on a mark whose link opens this same page replays it and does not
-reload. A click that opens another page of the site carries the group to
-that page in `sessionStorage`, and that page replays it on load, so the nav
-logo (linked to `/`) plays on the home page it opens. A link to another
-origin, or one opened in a new tab, is left alone. Under
+reload, so the nav logo (linked to `/`) replays on the landing page. From
+any other page it is an ordinary link home. A link to another origin, or
+one opened in a new tab, is left alone. Under
 `prefers-reduced-motion: reduce` nothing replays.
 
 A site opts its nav logo in on the element it passes to the `logo` slot:

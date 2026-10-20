@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  PENDING_KEY,
   installMarkReplay,
   replayDataUrl,
   replayMark,
@@ -54,8 +53,7 @@ test('an <img> mark gets a fresh data: URL of its animated source, fetched once'
   assert.notEqual(img.src, first);
 });
 
-function page({ reduced = false, pending = null, href = 'https://ectropy.ai/' } = {}) {
-  const store = new Map(pending === null ? [] : [[PENDING_KEY, pending]]);
+function page({ reduced = false, href = 'https://ectropy.ai/' } = {}) {
   const replayed = [];
   const marks = ['nav', 'venture'].map((group) => ({
     tagName: 'svg',
@@ -69,10 +67,9 @@ function page({ reduced = false, pending = null, href = 'https://ectropy.ai/' } 
   };
   const win = {
     matchMedia: () => ({ matches: reduced }),
-    sessionStorage: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v), removeItem: (k) => store.delete(k) },
     location: new URL(href),
   };
-  return { doc, win, store, replayed, marks, click: (e) => onClick?.(e) };
+  return { doc, win, replayed, marks, click: (e) => onClick?.(e) };
 }
 
 function clickOn(mark, link) {
@@ -90,35 +87,27 @@ test('a click on a mark linked to this page replays it without reloading', () =>
   assert.deepEqual(p.replayed, ['nav']);
 });
 
-test('a click that opens another page of the site leaves the group for that page, which replays it', () => {
+test('a click on the logo from another page navigates and does not replay', () => {
   const p = page({ href: 'https://ectropy.ai/platform' });
   installMarkReplay(p.doc, p.win);
   const c = clickOn(p.marks[0], { href: 'https://ectropy.ai/', target: '', getAttribute: () => '/' });
   p.click(c.e);
   assert.equal(c.prevented(), false);
   assert.deepEqual(p.replayed, []);
-  assert.equal(p.store.get(PENDING_KEY), 'nav');
-
-  const next = page({ pending: 'nav' });
-  installMarkReplay(next.doc, next.win);
-  assert.deepEqual(next.replayed, ['nav']);
-  assert.equal(next.store.has(PENDING_KEY), false);
 });
 
-test('a click away to another site neither replays nor leaves anything pending', () => {
+test('a click away to another site does not replay', () => {
   const p = page();
   installMarkReplay(p.doc, p.win);
   const c = clickOn(p.marks[1], { href: 'https://hilja.ai/', target: '', getAttribute: () => 'https://hilja.ai/' });
   p.click(c.e);
   assert.equal(c.prevented(), false);
   assert.deepEqual(p.replayed, []);
-  assert.equal(p.store.has(PENDING_KEY), false);
 });
 
-test('under reduced motion nothing replays and no click is handled', () => {
-  const p = page({ reduced: true, pending: 'nav' });
+test('under reduced motion a click does not replay', () => {
+  const p = page({ reduced: true });
   installMarkReplay(p.doc, p.win);
-  assert.deepEqual(p.replayed, []);
   const c = clickOn(p.marks[0], null);
   p.click(c.e);
   assert.deepEqual(p.replayed, []);
