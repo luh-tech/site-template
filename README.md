@@ -3,8 +3,15 @@
 One Astro component library renders every LuhTech venture marketing site from
 its own `content/page.schema.json` + `content/site.schema.json` instances.
 Copy is a derived surface -- the instances are the authored source, this
-package is the renderer, and it validates on every build so an invalid
-instance fails the build instead of shipping.
+package is the renderer. Since 0.18.0 the package fetches and carries no
+schema: each site repo validates its instances in its own CI against
+schema-registry (the reusable `content-validate.yml` workflow), so an invalid
+instance fails that site's CI instead of shipping.
+
+Current release: **0.22.0** on npmjs.com. Every release is a
+`site-template-v*` tag, published by `.github/workflows/publish.yml`; CI
+(`.github/workflows/ci.yml`) runs `npm install` + `npm test` on every PR and
+push to `main`.
 
 ```
 npm install @luhtech/site-template
@@ -45,6 +52,8 @@ site with no way to supply one (GTM-L3 G1.4-R, 2026-09-08).
   on `hero`/`proof` sections were silently invisible before this).
 - **`<SplashHero {...} />`** (`@luhtech/site-template/components/SplashHero.astro`)
   -- a trigger-flow hero: full-bleed photo, a one-time splash intro on load
+  (optional since 0.20.0: `intro: 'wordmark'` is the default, `intro: 'none'`
+  renders the hero with no splash -- Ectropy-Business's `apps/marketing-site` home page uses `'none'`)
   (wireframe wordmark -> white-fill wave -> fly-out into the real nav logo's
   on-screen position, measured at play time), then never repeats for that
   session (`sessionStorage`, keyed by your own `sessionKey` so two on one
@@ -63,9 +72,9 @@ site with no way to supply one (GTM-L3 G1.4-R, 2026-09-08).
   as usual. See `~/dev/luhtech/Ectropy-Business/apps/marketing-site/src/pages/index.astro`
   for the reference consumer.
 - **`loadBrand(path)`** (`@luhtech/site-template/content`) reads a
-  `content/brand/<venture>.json` file and ajv-validates it against the live,
-  version-pinned `portfolio/brand-identity.schema.json`. Mirrors
-  `loadPage`/`loadSite`.
+  `content/brand/<venture>.json` (`portfolio/brand-identity.schema.json`)
+  instance. Like `loadPage`/`loadSite`, it does not validate (0.18.0); the
+  site's CI does.
 - **`applyBrandDefaults(page, brand)`** (`@luhtech/site-template/content`) --
   GTM-L3 G1.1/G1.2: on the page whose `route` is `/`, returns a copy of
   `page` with `sections[hero].heading` replaced by `brand.identity.tagline`,
@@ -216,9 +225,10 @@ design undershot; the bespoke clickable-diagram/inspector/scenario-ledger
 layer those examples also use is deliberately out of scope -- genuinely
 bespoke per-tool illustration work, not schema-parametrizable regardless.
 
-`loadTool()` (new, `@luhtech/site-template/content`) reads and ajv-validates
-a `content/tool.schema.json` instance from disk, same convention and error
-handling as `loadPage`/`loadSite`. `ToolCalculator.astro` renders it: real
+`loadTool()` (new, `@luhtech/site-template/content`) reads a
+`content/tool.schema.json` instance from disk, same convention as
+`loadPage`/`loadSite` (it validated with ajv until 0.18.0; the site's CI
+validates it now). `ToolCalculator.astro` renders it: real
 inputs, a live-computed result gated behind a contact-capture form, and
 (when the instance's `presentation` block is present) the hero KPI/chart/
 method-notes/sources described above. `<Section>`/`<Article>` gained
@@ -290,7 +300,8 @@ this same section's own `diagrams[]` -- the block is a position, `diagrams[]`
 stays the data) and `image` (required `src`+`alt`, optional `caption` --
 the first real mechanism for a photo to appear inline in an article body
 at all). Existing instances validate unchanged; `PAGE_PIN` bumped to
-`1.3.0`.
+`1.3.0` (the pin itself was removed in 0.18.0, when validation moved to
+each site's CI).
 
 **`Block.astro`** renders both: `diagram` dispatches to `Diagram.astro`
 after resolving `diagramId` against a new `diagrams` prop -- a dangling
@@ -326,6 +337,47 @@ A `tsconfig.json` was added (this repo had none) extending
 "Bundler"`; incidentally also cleared 24 pre-existing implicit-`any`
 diagnostics across `ToolCalculator.astro` and the diagram components that
 the repo's prior no-tsconfig default resolution wasn't catching.
+
+## Marks, the venture directory, forms, papers and figures (0.8.0 - 0.20.1)
+
+What landed between 0.7.0 and 0.15.0, and after it, that the sections above
+and below do not cover (versions from this repo's commit history):
+
+- **Venture marks.** `VentureMark.astro` renders a venture's mark on a sibling
+  site, preferring its animated mark from the generated
+  `src/lib/venture-marks.generated.ts` and falling back to the static one.
+  Each animated mark is self-contained (its own scoped `<style>` and prefixed
+  keyframes) so several can sit on one page (0.8.0, 0.9.0; Ectropy's mark is
+  its brand pack's reverse reveal at small format since 0.20.0/0.20.1).
+- **Venture cards.** `VentureCard.astro` renders a `crossLinks[]` entry as a
+  card: mark, the venture's display name and one-liner from the generated
+  `src/lib/venture-directory.generated.ts`, and the authored
+  `relationshipLine` (0.10.0; the holding company shows its name, not its id,
+  since 0.18.1).
+- **Sync bins (local, not CI).** `luhtech-sync-marks`,
+  `luhtech-sync-animated-marks` and `luhtech-sync-venture-directory` read the
+  venture repos as sibling checkouts on disk (`~/dev/luhtech/<Repo>`, listed in
+  `bin/lib/ventures.mjs`) and regenerate the files above. They cannot run in
+  CI; run them by hand when a venture's mark or brand record changes.
+  `bin/lib/ventures.mjs` lists ten entries: Ectropy, Qullqa, Siltana,
+  JobsiteControl, Viiva, Ohjaus, Raizal, Replique, Hilja and LuhTech.
+- **Shared layout pieces.** `FullBleedHeroImage.astro` (0.10.2, promoted from
+  LuhTech-Business), `SectionHeading.astro` (shared heading standard), a `bio` block
+  type (0.11.0), a nav that collapses behind a menu button below `md` (0.13.0),
+  and `LoginCard.astro` plus a sign-in nav button (0.14.0).
+- **Gated asset request.** `AssetRequestForm.astro` renders a `cta` section
+  that carries `assetRequest`: name, work email, company, role and an unticked
+  opt-in, posted to `site.leadCapture.assetRequestEndpoint`. The page only
+  shows a confirmation; the capture service emails the link
+  (d-2026-10-01-st-asset-request-form).
+- **Paper landing.** `PaperLanding.astro` (`@luhtech/site-template/lib/paperLanding`
+  for its helpers) is a paper's one page: its open summary and figures, then
+  Download, Feedback and Share, read from the whitepaper record (0.17.0,
+  d-2026-10-02-st-paper-landing-three-actions).
+- **Figure records.** A `diagrams[]` entry that names a `figureRef` is drawn by
+  `@luhtech/figures` (published from `luh-tech/site-visuals`) in the site's
+  brand theme; an entry with `diagramType` + `data` still draws inline (0.19.0).
+  `ConnectionGraph.astro` renders the `connection-graph` diagram type.
 
 ## Browser icons, canonical URLs and search metadata (0.15.0)
 
@@ -444,4 +496,12 @@ in `predev`/`prebuild` as before. Run both check bins in CI against every
 
 ## Peer dependencies
 
-`astro ^7.2`, `tailwindcss ^4`.
+`astro ^7.2`, `tailwindcss ^4`, and `playwright >=1.40` as an optional peer
+(only `luhtech-device-smoke` needs it).
+
+Dependencies: `@lucide/astro` (icons), `@resvg/resvg-js` (`luhtech-sync-icons`)
+and `@luhtech/figures` (figure records).
+
+Deliverable records for this package's changes (`d-<date>-st-<slug>`) live in
+`luh-tech/Ectropy-Business` `.dlp/deliverables/`; this repo carries no `.roadmap/`
+or `.dlp/`.
