@@ -111,6 +111,9 @@ export function feedbackMessage(status: number, error?: string): string {
 interface PaperFigure {
   figureId: string;
   value: string;
+  label?: string;
+  measure?: Record<string, unknown>;
+  /** Deprecated by whitepaper 1.4.0; read only when label is absent. */
   unit?: string;
   caption?: string;
   estimate?: boolean;
@@ -173,6 +176,8 @@ export function paperSections(paper: PaperRecord, slug: string) {
       figures: open.map((f) => ({
         figureId: f.figureId,
         value: f.estimate && !/estimate/i.test(f.value) ? `${f.value} (estimate)` : f.value,
+        ...(f.label ? { label: f.label } : {}),
+        ...(f.measure ? { measure: f.measure } : {}),
         ...(f.unit ? { unit: f.unit } : {}),
         provenance: f.provenance,
       })),

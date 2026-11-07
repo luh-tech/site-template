@@ -8,7 +8,7 @@ schema: each site repo validates its instances in its own CI against
 schema-registry (the reusable `content-validate.yml` workflow), so an invalid
 instance fails that site's CI instead of shipping.
 
-Current release: **0.22.0** on npmjs.com. Every release is a
+Current release: **0.23.0** on npmjs.com. Every release is a
 `site-template-v*` tag, published by `.github/workflows/publish.yml`; CI
 (`.github/workflows/ci.yml`) runs `npm install` + `npm test` on every PR and
 push to `main`.
@@ -424,6 +424,16 @@ Two bins go with it:
   Needs Playwright, an optional peer: `npm i -D playwright && npx playwright
   install chromium`. `SiteLayout` emits the web-app meta for an installable
   site.
+
+## A figure renders its label (0.23.0)
+
+content/page 2.9.0 and whitepaper 1.4.0 give a figure a `label` (what the
+value is) and a `measure` (the value as money, a quantity, a fraction or a
+date, by reference to the open standard's units definitions), and deprecate
+`unit`, which carried both. `Figure` and the `sources` section render
+`label`, and fall back to `unit` for a record not yet moved;
+`paperSections` carries `label` and `measure` onto the proof section.
+`figureLabel` (`@luhtech/site-template/lib/figureLabel`) is the one rule.
 
 ## An animated mark replays when clicked (0.22.0)
 

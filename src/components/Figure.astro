@@ -12,16 +12,21 @@ export interface Props {
 	figure: {
 		figureId: string;
 		value: string;
+		label?: string;
+		measure?: Record<string, unknown>;
+		/** Deprecated by content/page 2.9.0; read only when label is absent. */
 		unit?: string;
 		provenance: { sourceRef: string; observedAt?: string };
 	};
 }
+import { figureLabel } from '../lib/figureLabel';
 const { figure } = Astro.props;
+const label = figureLabel(figure);
 ---
 <div class="relative rounded-md border border-ink/15 bg-canvas p-5 overflow-hidden" id={figure.figureId}>
 	<span class="absolute top-0 left-0 right-0 h-1 bg-accent-primary" aria-hidden="true"></span>
 	<span class="font-display text-4xl font-bold leading-none block">{figure.value}</span>
-	{figure.unit && <span class="text-sm text-ink/70 font-medium mt-2 block">{figure.unit}</span>}
+	{label && <span class="text-sm text-ink/70 font-medium mt-2 block">{label}</span>}
 	<span class="text-xs text-ink/50 mt-4 pt-3 border-t border-ink/10 block">
 		{figure.provenance.sourceRef}
 		{figure.provenance.observedAt && ` (${figure.provenance.observedAt})`}

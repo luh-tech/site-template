@@ -2,6 +2,7 @@
 // sectionKind: sources -- citations for every figure used on the page,
 // each figure's provenance.sourceRef rendered as a full citation.
 import SectionHeading from '../SectionHeading.astro';
+import { figureLabel } from '../../lib/figureLabel';
 
 export interface Props { section: any }
 const { section } = Astro.props;
@@ -11,7 +12,7 @@ const { section } = Astro.props;
 	<ol class="space-y-2 text-sm text-ink/70">
 		{section.figures?.map((f: any) => (
 			<li>
-				<strong>{f.value}{f.unit ? ` ${f.unit}` : ''}</strong> — {f.provenance.sourceRef}
+				<strong>{f.value}{figureLabel(f) ? ` ${figureLabel(f)}` : ''}</strong> — {f.provenance.sourceRef}
 				{f.provenance.observedAt && ` (observed ${f.provenance.observedAt})`}
 			</li>
 		))}
